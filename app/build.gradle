@@ -1,0 +1,41 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:0.12.+'
+    }
+}
+
+apply plugin: 'com.android.application'
+
+android {
+    enforceUniquePackageName false
+    compileSdkVersion 20
+    buildToolsVersion '20.0.0'
+    defaultConfig {
+        applicationId 'com.android.launcher3'
+        minSdkVersion 16
+        targetSdkVersion 20
+        versionCode 3
+        versionName '4.4.4'
+    }
+    buildTypes {
+        release {
+            runProguard false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    dexOptions {
+        preDexLibraries = false
+    }
+    lintOptions {
+        abortOnError false //Test if it still works on 4.1
+    }
+}
+
+dependencies {
+    compile project(':WallpaperPicker')
+    // compile 'com.google.protobuf:protobuf-java:2.3.0' FIXME does not contain .nano package
+    compile fileTree(dir: 'libs', include: '*.jar')
+}
