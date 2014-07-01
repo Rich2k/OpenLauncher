@@ -7,14 +7,14 @@ buildscript {
     }
 }
 
-apply plugin: 'com.android.application'
+apply plugin: 'com.android.library'
 
 android {
     enforceUniquePackageName false
     compileSdkVersion 20
     buildToolsVersion '20.0.0'
     defaultConfig {
-        applicationId 'be.geecko.openlauncher'
+        applicationId 'com.android.launcher3'
         minSdkVersion 16
         targetSdkVersion 20
         versionCode 3
@@ -29,9 +29,13 @@ android {
     dexOptions {
         preDexLibraries = false
     }
+    lintOptions {
+        abortOnError false //Test if it still works on 4.1
+    }
 }
 
 dependencies {
-    compile project(':Launcher3')
+    compile project(':WallpaperPicker')
+    // compile 'com.google.protobuf:protobuf-java:2.3.0' FIXME does not contain .nano package
     compile fileTree(dir: 'libs', include: '*.jar')
 }
