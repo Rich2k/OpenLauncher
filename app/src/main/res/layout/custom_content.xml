@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<be.geecko.openlauncher.CustomContent xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:orientation="vertical"
+    android:layout_height="match_parent">
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="24dp"
+        android:layout_alignParentTop="true"
+        android:background="@color/ddg_red" />
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="75dp"
+        android:background="@android:color/white">
+
+        <ImageView
+            android:layout_width="60dp "
+            android:layout_height="50dp"
+            android:layout_centerVertical="true"
+            android:src="@drawable/ddg_logo"
+            android:contentDescription="Logo"
+            tools:ignore="HardcodedText" />
+
+        <EditText
+            android:id="@+id/search_bar"
+            android:textColor="@android:color/secondary_text_light"
+            android:hint="@string/ddg_hint"
+            android:inputType="text"
+            android:imeOptions="actionGo"
+            android:cursorVisible="true"
+            android:background="@drawable/search_bar"
+            android:drawableEnd="@drawable/ic_search"
+            android:maxWidth="600dip"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            android:layout_gravity="center_vertical"
+            android:layout_marginLeft="70dp"
+            android:layout_marginRight="10dp"
+            android:layout_centerVertical="true"
+            android:layout_width="match_parent"
+            android:layout_height="35dp" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_alignParentBottom="true"
+            android:background="@color/separator" />
+
+    </RelativeLayout>
+
+    <View
+        android:id="@+id/custom_container"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:background="@color/background" />
+
+</be.geecko.openlauncher.CustomContent>

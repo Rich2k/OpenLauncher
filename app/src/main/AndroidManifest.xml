@@ -48,10 +48,11 @@
     <uses-permission android:name="com.android.launcher3.permission.RECEIVE_LAUNCH_BROADCASTS" />
     <application
         android:name="com.android.launcher3.LauncherApplication"
-        android:label="@string/application_name"
+        android:label="OpenLauncher"
         android:icon="@mipmap/ic_launcher_home"
         android:hardwareAccelerated="true"
         android:largeHeap="@bool/config_largeHeap"
+        android:allowBackup="true"
         android:supportsRtl="true" 
         tools:node="replace">
         <activity

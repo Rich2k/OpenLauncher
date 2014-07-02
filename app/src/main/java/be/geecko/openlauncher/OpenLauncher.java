@@ -1,5 +1,7 @@
 package be.geecko.openlauncher;
 
+import android.view.LayoutInflater;
+
 import com.android.launcher3.Launcher;
 
 /**
@@ -27,7 +29,8 @@ public class OpenLauncher extends Launcher {
 
     @Override
     protected void populateCustomContentContainer() {
-        CustomContent customContent = new CustomContent(this);
+        CustomContent customContent = (CustomContent)
+                LayoutInflater.from(this).inflate(R.layout.custom_content,null);
         this.addToCustomContentPage(customContent,customContent,"Custom Content");
     }
 
