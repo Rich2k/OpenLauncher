@@ -1,6 +1,7 @@
 package be.geecko.openlauncher.UI;
 
 import android.content.Context;
+import android.support.v7.widget.CardView;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.AttributeSet;
@@ -14,6 +15,7 @@ import android.widget.TextView;
 
 import be.geecko.openlauncher.CustomContent;
 import be.geecko.openlauncher.R;
+import be.geecko.openlauncher.cards.SuggestionsCard;
 import be.geecko.openlauncher.net.SuggestionsTask;
 
 /**
@@ -32,6 +34,9 @@ import be.geecko.openlauncher.net.SuggestionsTask;
  * limitations under the License.
  */
 public class SearchBar extends EditText implements TextView.OnEditorActionListener, TextWatcher {
+
+    //TODO separate searchbar layout to its own .xml
+
     public SearchBar(Context context) {
         super(context);
         setOnEditorActionListener(this);
@@ -76,8 +81,8 @@ public class SearchBar extends EditText implements TextView.OnEditorActionListen
             st.execute(searchTerms);
             setClearButton(false);
         } else {
-            if (container.getChildAt(0) != null &&
-                    "suggestion card".equals(container.getChildAt(0).getContentDescription()))
+            View firstCard = container.getChildAt(0);
+            if (firstCard != null && firstCard instanceof SuggestionsCard)
                 container.removeViewAt(0);
             setClearButton(true);
         }
@@ -86,7 +91,7 @@ public class SearchBar extends EditText implements TextView.OnEditorActionListen
     private void setClearButton(boolean flag) {
         RelativeLayout searchBox = (RelativeLayout) this.getParent();
         ImageButton clearButton = (ImageButton) searchBox.getChildAt(1);
-        clearButton.setVisibility(!flag ? View.VISIBLE : View.INVISIBLE);
-        this.setCompoundDrawablesWithIntrinsicBounds(0, 0, !flag ? 0 : R.drawable.ic_search, 0);
+        clearButton.setVisibility(flag ? View.INVISIBLE : View.VISIBLE);
+        this.setCompoundDrawablesWithIntrinsicBounds(0, 0, flag ? R.drawable.ic_search : 0, 0);
     }
 }

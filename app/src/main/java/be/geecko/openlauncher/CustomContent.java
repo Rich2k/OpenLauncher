@@ -31,7 +31,8 @@ public class CustomContent extends FrameLayout implements Launcher.CustomContent
 
     //TODO voice
 
-    //TODO cards
+    //TODO rework cards interface
+    //TODO Search Phone
     //TODO Pull to refresh
     //TODO Scroll tricks
 

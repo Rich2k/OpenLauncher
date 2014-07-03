@@ -6,7 +6,10 @@ import android.os.AsyncTask;
 import android.support.v7.widget.CardView;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.TextView;
 
 import java.io.IOException;
@@ -21,6 +24,7 @@ import org.json.*;
 
 import be.geecko.openlauncher.CustomContent;
 import be.geecko.openlauncher.R;
+import be.geecko.openlauncher.cards.SuggestionsCard;
 
 /**
  * This file is part of OpenLauncher for Android
@@ -56,7 +60,7 @@ public class SuggestionsTask extends AsyncTask<String, Integer, JSONArray> {
         }
         String url = String.format(
                 "https://clients1.google.com/complete/search?output=toolbar&client=firefox&hl=%s&q=%s",
-                "en",
+                "en", // fixme
                 searchTerms);
         JSONArray result = null;
         try {
@@ -69,53 +73,45 @@ public class SuggestionsTask extends AsyncTask<String, Integer, JSONArray> {
     }
 
     @Override
-    protected void onPostExecute(JSONArray result) {
-        super.onPostExecute(result);
-        if (result == null)
+    protected void onPostExecute(JSONArray jsonResult) {
+        super.onPostExecute(jsonResult);
+        if (jsonResult == null)
             return;
         final Context context = cardsContainer.getContext();
-        final CharSequence suggestionDesc = "suggestion card";
-        CardView suggestionsCard;
+        SuggestionsCard suggestionsCard;
 
         if (cardsContainer.getChildAt(0) != null &&
-                suggestionDesc.equals(cardsContainer.getChildAt(0).getContentDescription())) {
-            suggestionsCard = (CardView) cardsContainer.getChildAt(0);
-            ((LinearLayout) suggestionsCard.getChildAt(0)).removeAllViewsInLayout();
-        } else {
-            suggestionsCard = (CardView) LayoutInflater.from(context).inflate(R.layout.card, null);
+                cardsContainer.getChildAt(0) instanceof SuggestionsCard)
+            suggestionsCard = (SuggestionsCard) cardsContainer.getChildAt(0);
+        else {
+            suggestionsCard = (SuggestionsCard) LayoutInflater.from(context).inflate(
+                    R.layout.card,
+                    cardsContainer,
+                    false);
             cardsContainer.addView(suggestionsCard);
-            suggestionsCard.setContentDescription(suggestionDesc);
         }
-        final int limit = result.length() > 5 ? 5 : result.length();
+        final int limit = jsonResult.length() > 3 ? 3 : jsonResult.length();
+        final String[] results = new String[limit];
         try {
-            for (int i = 0; i < limit; i++) {
-                TextView tv = new TextView(context);
-                tv.setText(result.getString(i));
-                tv.setTextSize(17);
-                tv.setTextColor(Color.BLACK);
-                tv.setCompoundDrawablesWithIntrinsicBounds(0,
-                        0,
-                        R.drawable.ic_commit_search_api_holo_light,
-                        0);
-                tv.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        String searchTerms = ((TextView) view).getText().toString();
-                        CustomContent.search(searchTerms,view.getContext());
-                    }
-                });
-                ((LinearLayout) suggestionsCard.getChildAt(0)).addView(tv);
-
-                //TODO to class? CardView + ListView?
-                //TODO bold right part of text
-                //TODO More free space
-            }
+            for (int i = 0; i < limit; i++)
+                results[i] = jsonResult.getString(i);
         } catch (JSONException e) {
             e.printStackTrace();
+            return;
         }
+        ArrayAdapter<CharSequence> adapter = new ArrayAdapter<CharSequence>(context,
+                R.layout.card_list_adapter, results);
+        ListView resultList = ((ListView) suggestionsCard.getChildAt(0));
+        resultList.setAdapter(adapter);
+        resultList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                CustomContent.search(results[i], view.getContext());
+            }
+        });
     }
 
-    private String readUrl(String http) throws IOException {
+    private static String readUrl(String http) throws IOException {
         URL url = new URL(http);
         URLConnection connection = url.openConnection();
         InputStream in = connection.getInputStream();
