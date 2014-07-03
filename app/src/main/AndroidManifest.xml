@@ -1,7 +1,7 @@
-<manifest
-    xmlns:android="http://schemas.android.com/apk/res/android" 
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     package="be.geecko.openlauncher">
+
     <permission
         android:name="com.android.launcher3.permission.PRELOAD_WORKSPACE"
         android:permissionGroup="android.permission-group.SYSTEM_TOOLS"
@@ -17,28 +17,32 @@
         android:permissionGroup="android.permission-group.SYSTEM_TOOLS"
         android:protectionLevel="dangerous"
         android:label="@string/permlab_uninstall_shortcut"
-        android:description="@string/permdesc_uninstall_shortcut"/>
+        android:description="@string/permdesc_uninstall_shortcut" />
     <permission
         android:name="com.android.launcher3.permission.READ_SETTINGS"
         android:permissionGroup="android.permission-group.SYSTEM_TOOLS"
         android:protectionLevel="normal"
         android:label="@string/permlab_read_settings"
-        android:description="@string/permdesc_read_settings"/>
+        android:description="@string/permdesc_read_settings" />
     <permission
         android:name="com.android.launcher3.permission.WRITE_SETTINGS"
         android:permissionGroup="android.permission-group.SYSTEM_TOOLS"
         android:protectionLevel="signatureOrSystem"
         android:label="@string/permlab_write_settings"
-        android:description="@string/permdesc_write_settings"/>
+        android:description="@string/permdesc_write_settings" />
     <permission
         android:name="com.android.launcher3.permission.RECEIVE_LAUNCH_BROADCASTS"
-        android:protectionLevel="signature"
-        />
+        android:protectionLevel="signature" />
+
+    <uses-sdk tools:node="replace" />
+
     <uses-permission android:name="android.permission.CALL_PHONE" />
     <uses-permission android:name="android.permission.SET_WALLPAPER" />
     <uses-permission android:name="android.permission.SET_WALLPAPER_HINTS" />
     <uses-permission android:name="android.permission.VIBRATE" />
-    <uses-permission android:name="android.permission.BIND_APPWIDGET" tools:ignore="ProtectedPermissions" />
+    <uses-permission
+        android:name="android.permission.BIND_APPWIDGET"
+        tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="com.android.launcher.permission.READ_SETTINGS" />
@@ -46,6 +50,8 @@
     <uses-permission android:name="com.android.launcher3.permission.READ_SETTINGS" />
     <uses-permission android:name="com.android.launcher3.permission.WRITE_SETTINGS" />
     <uses-permission android:name="com.android.launcher3.permission.RECEIVE_LAUNCH_BROADCASTS" />
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:name="com.android.launcher3.LauncherApplication"
         android:label="OpenLauncher"
@@ -53,7 +59,7 @@
         android:hardwareAccelerated="true"
         android:largeHeap="@bool/config_largeHeap"
         android:allowBackup="true"
-        android:supportsRtl="true" 
+        android:supportsRtl="true"
         tools:node="replace">
         <activity
             android:name="be.geecko.openlauncher.OpenLauncher"
@@ -65,9 +71,10 @@
             android:screenOrientation="nosensor">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.HOME" />
                 <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.MONKEY"/>
+                <category android:name="android.intent.category.MONKEY" />
             </intent-filter>
         </activity>
         <activity
@@ -77,6 +84,7 @@
             android:icon="@mipmap/ic_launcher_home">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
@@ -113,18 +121,17 @@
             android:label="@string/debug_memory_activity"
             android:enabled="@bool/debug_memory_enabled"
             android:excludeFromRecents="true"
-            android:icon="@mipmap/ic_launcher_home"
-            >
+            android:icon="@mipmap/ic_launcher_home">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <service android:name="com.android.launcher3.MemoryTracker"
-            android:enabled="@bool/debug_memory_enabled"
-            >
-        </service>
+        <service
+            android:name="com.android.launcher3.MemoryTracker"
+            android:enabled="@bool/debug_memory_enabled"></service>
         <!-- Intent received used to prepopulate the default workspace. -->
         <receiver
             android:name="com.android.launcher3.PreloadReceiver"
@@ -133,8 +140,7 @@
                 <action android:name="com.android.launcher3.action.PRELOAD_WORKSPACE" />
             </intent-filter>
         </receiver>
-        <receiver
-            android:name="com.android.launcher3.WallpaperChangedReceiver">
+        <receiver android:name="com.android.launcher3.WallpaperChangedReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.WALLPAPER_CHANGED" />
             </intent-filter>
@@ -163,11 +169,12 @@
                 <action android:name="android.intent.action.USER_INITIALIZE" />
             </intent-filter>
         </receiver>
-        <receiver android:name="com.android.launcher3.PackageChangedReceiver" >
+        <receiver android:name="com.android.launcher3.PackageChangedReceiver">
             <intent-filter>
-                <action android:name="android.intent.action.PACKAGE_CHANGED"/>
-                <action android:name="android.intent.action.PACKAGE_REPLACED"/>
-                <action android:name="android.intent.action.PACKAGE_REMOVED"/>
+                <action android:name="android.intent.action.PACKAGE_CHANGED" />
+                <action android:name="android.intent.action.PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.PACKAGE_REMOVED" />
+
                 <data android:scheme="package"></data>
             </intent-filter>
         </receiver>
@@ -178,7 +185,8 @@
             android:exported="true"
             android:writePermission="com.android.launcher3.permission.WRITE_SETTINGS"
             android:readPermission="com.android.launcher3.permission.READ_SETTINGS" />
-        <meta-data android:name="android.nfc.disable_beam_default"
+        <meta-data
+            android:name="android.nfc.disable_beam_default"
             android:value="true" />
     </application>
 </manifest>

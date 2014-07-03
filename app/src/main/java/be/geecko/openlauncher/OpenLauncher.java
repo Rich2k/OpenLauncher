@@ -22,6 +22,8 @@ import com.android.launcher3.Launcher;
  */
 public class OpenLauncher extends Launcher {
 
+    //TODO add searchbar at the top
+
     @Override
     protected boolean hasCustomContentToLeft() {
         return true;

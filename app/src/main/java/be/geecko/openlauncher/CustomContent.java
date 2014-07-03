@@ -23,6 +23,8 @@ import com.android.launcher3.Launcher;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
+import be.geecko.openlauncher.net.SuggestionsTask;
+
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 
 /**
@@ -41,12 +43,14 @@ import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-public class CustomContent extends LinearLayout implements Launcher.CustomContentCallbacks {
+public class CustomContent extends FrameLayout implements Launcher.CustomContentCallbacks {
 
     //TODO auto-complete
     //TODO voice
 
     //TODO cards
+    //TODO Pull to refresh
+    //TODO Scroll tricks
 
     public CustomContent(Context context) {
         super(context);
@@ -60,25 +64,31 @@ public class CustomContent extends LinearLayout implements Launcher.CustomConten
         super(context, attrs, defStyle);
     }
 
+    public static boolean search(String search, Context context) {
+        Intent browserIntent;
+        try {
+            browserIntent = new Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse("https://duckduckgo.com/?q=" +
+                            URLEncoder.encode(search, "utf-8"))
+            );
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+            return false;
+        }
+        context.startActivity(browserIntent);
+        return true;
+    }
+
     private void setupSearchBar() {
         EditText searchBar = (EditText) findViewById(R.id.search_bar);
 
         searchBar.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
-                Intent browserIntent;
-                try {
-                    browserIntent = new Intent(
-                            Intent.ACTION_VIEW,
-                            Uri.parse("https://duckduckgo.com/?q=" +
-                                    URLEncoder.encode(textView.getText().toString(), "utf-8"))
-                    );
-                } catch (UnsupportedEncodingException e) {
-                    e.printStackTrace();
-                    return false;
-                }
-                CustomContent.this.getContext().startActivity(browserIntent);
-                return true;
+                return CustomContent.search(
+                        textView.getText().toString(),
+                        CustomContent.this.getContext());
             }
         });
 
@@ -96,9 +106,16 @@ public class CustomContent extends LinearLayout implements Launcher.CustomConten
             @Override
             public void afterTextChanged(Editable editable) {
                 String searchTerms = editable.toString();
-
+                LinearLayout container = (LinearLayout) findViewById(R.id.cards_container);
+                if (searchTerms.length() > 2) {
+                    SuggestionsTask st = new SuggestionsTask(container);
+                    st.execute(searchTerms);
+                } else if (container.getChildAt(0) != null &&
+                        "suggestion card".equals(container.getChildAt(0).getContentDescription()))
+                    container.removeViewAt(0);
             }
         });
+        //TODO to class? W/ voice & cancel button
     }
 
     @Override
@@ -113,6 +130,5 @@ public class CustomContent extends LinearLayout implements Launcher.CustomConten
 
     @Override
     public void onScrollProgressChanged(float progress) {
-        //TODO what is this?
     }
 }
