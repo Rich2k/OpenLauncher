@@ -1,7 +1,15 @@
 package be.geecko.openlauncher;
 
+import android.app.SearchManager;
+import android.content.ComponentName;
+import android.content.Context;
+import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.ImageView;
+import android.widget.Toast;
 
 import com.android.launcher3.Launcher;
 
@@ -25,7 +33,8 @@ import be.geecko.openlauncher.UI.SearchBar;
  */
 public class OpenLauncher extends Launcher {
 
-    //TODO add searchbar at the top
+    View mQsb;
+
     //TODO red bar should not move when selection action bar is called
 
     @Override
@@ -36,8 +45,58 @@ public class OpenLauncher extends Launcher {
     @Override
     protected void populateCustomContentContainer() {
         CustomContent customContent = (CustomContent)
-                LayoutInflater.from(this).inflate(R.layout.custom_content, null);
+                getLayoutInflater().inflate(R.layout.custom_content, null);
         this.addToCustomContentPage(customContent, customContent, "Custom Content");
+    }
+
+    @Override
+    public View getQsbBar() {
+        ViewGroup mSearchDropTargetBar = this.getSearchBar();
+        if (mQsb == null && mSearchDropTargetBar != null) {
+            mQsb = getLayoutInflater().inflate(R.layout.search_bar, mSearchDropTargetBar, false);
+            this.getSearchBar().addView(mQsb);
+        }
+        return mQsb;
+    }
+
+    @Override
+    protected boolean updateGlobalSearchIcon() {
+        final View searchButtonContainer = findViewById(R.id.search_button_container);
+        final ImageView searchButton = (ImageView) findViewById(R.id.search_button);
+        if (searchButtonContainer != null) searchButtonContainer.setVisibility(View.VISIBLE);
+        searchButton.setVisibility(View.VISIBLE);
+        return true;
+    }
+
+    @Override
+    public boolean onSearchRequested() {
+        moveToCustomContentScreen(true);
+        final View searchBar = findViewById(R.id.search_bar);
+        searchBar.post(new Runnable() {
+            public void run() {
+                searchBar.requestFocusFromTouch();
+                InputMethodManager inputManager = (InputMethodManager)
+                        getSystemService(Context.INPUT_METHOD_SERVICE);
+                inputManager.showSoftInput(searchBar, 0);
+            }
+        });
+        return true;
+    }
+
+    @Override
+    public void startVoice() {
+        Toast.makeText(this, "voice", Toast.LENGTH_SHORT).show();
+        //todo
+    }
+
+    @Override
+    protected boolean hasSettings() {
+        return true;
+    }
+
+    @Override
+    protected void startSettings() {
+        //todo
     }
 
     public void clearSearchBar(View view) {

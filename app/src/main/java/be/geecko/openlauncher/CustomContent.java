@@ -4,9 +4,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.util.AttributeSet;
+import android.view.View;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.widget.Toast;
 
 import com.android.launcher3.Launcher;
+import com.android.launcher3.SearchDropTargetBar;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -70,11 +74,28 @@ public class CustomContent extends FrameLayout implements Launcher.CustomContent
     }
 
     @Override
-    public void onHide() {
-
+    public void onHide() { /*
+        OpenLauncher openLauncher = (OpenLauncher) getContext();
+        SearchDropTargetBar searchBar = (SearchDropTargetBar) openLauncher.findViewById(
+                com.android.launcher3.R.id.search_drop_target_bar);
+        final View searchButtonContainer = openLauncher.findViewById(R.id.search_button_container);
+        if (searchButtonContainer != null) searchButtonContainer.setVisibility(View.VISIBLE);
+        searchBar.showSearchBar(true); */
     }
 
     @Override
     public void onScrollProgressChanged(float progress) {
+        boolean hide = progress > 0.5f;
+        OpenLauncher openLauncher = (OpenLauncher) getContext();
+        SearchDropTargetBar searchBar = (SearchDropTargetBar) openLauncher.findViewById(
+                com.android.launcher3.R.id.search_drop_target_bar);
+        if (hide)
+            searchBar.hideSearchBar(false);
+        else
+            searchBar.showSearchBar(true);
+        final View searchButtonContainer = openLauncher.findViewById(R.id.search_button_container);
+        if (searchButtonContainer != null) searchButtonContainer.setVisibility(
+                hide ? View.GONE : View.VISIBLE
+        );
     }
 }
