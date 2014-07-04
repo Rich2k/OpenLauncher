@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.util.AttributeSet;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.Toast;
@@ -74,13 +75,16 @@ public class CustomContent extends FrameLayout implements Launcher.CustomContent
     }
 
     @Override
-    public void onHide() { /*
-        OpenLauncher openLauncher = (OpenLauncher) getContext();
-        SearchDropTargetBar searchBar = (SearchDropTargetBar) openLauncher.findViewById(
-                com.android.launcher3.R.id.search_drop_target_bar);
-        final View searchButtonContainer = openLauncher.findViewById(R.id.search_button_container);
-        if (searchButtonContainer != null) searchButtonContainer.setVisibility(View.VISIBLE);
-        searchBar.showSearchBar(true); */
+    public void onHide() {
+        final View searchBar = findViewById(R.id.search_bar);
+        searchBar.post(new Runnable() {
+            public void run() {
+                searchBar.clearFocus();
+                InputMethodManager inputManager = (InputMethodManager)
+                        searchBar.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+                inputManager.hideSoftInputFromWindow(CustomContent.this.getWindowToken(), 0);
+            }
+        });
     }
 
     @Override
