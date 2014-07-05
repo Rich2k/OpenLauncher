@@ -23,9 +23,11 @@ In the future, will be implemented:
 ##Screenshots:
 
 July 4th
+
 ![Imgur](https://i.imgur.com/2PkGJ0G.jpg)
 
 July 3rd
+
 ![Imgur](https://i.imgur.com/z3PgiOh.jpg)
 ![Imgur](https://i.imgur.com/5XBw0bQ.png)
 ![Imgur](https://i.imgur.com/tNspywa.png)
