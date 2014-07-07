@@ -1,6 +1,7 @@
 package be.geecko.openlauncher.UI;
 
 import android.content.Context;
+import android.graphics.drawable.Drawable;
 import android.support.v7.widget.CardView;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -77,21 +78,21 @@ public class SearchBar extends EditText implements TextView.OnEditorActionListen
         String searchTerms = editable.toString();
         LinearLayout container = (LinearLayout) getRootView().findViewById(R.id.cards_container);
         if (searchTerms.length() > 0) {
-            SuggestionsTask st = new SuggestionsTask(container);
+            SuggestionsTask st = new SuggestionsTask((CustomContent) container.getParent());
             st.execute(searchTerms);
-            setClearButton(false);
+            setClearButton(true);
         } else {
             View firstCard = container.getChildAt(0);
             if (firstCard != null && firstCard instanceof SuggestionsCard)
                 container.removeViewAt(0);
-            setClearButton(true);
+            setClearButton(false);
         }
     }
 
-    private void setClearButton(boolean flag) {
+    private void setClearButton(boolean show) {
         RelativeLayout searchBox = (RelativeLayout) this.getParent();
         ImageButton clearButton = (ImageButton) searchBox.getChildAt(1);
-        clearButton.setVisibility(flag ? View.INVISIBLE : View.VISIBLE);
-        this.setCompoundDrawablesWithIntrinsicBounds(0, 0, flag ? R.drawable.ic_search : 0, 0);
+        clearButton.setVisibility(show ? View.VISIBLE : View.INVISIBLE);
+        this.setCompoundDrawablesWithIntrinsicBounds(0, 0, show ? 0 : R.drawable.ic_search, 0);
     }
 }

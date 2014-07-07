@@ -8,6 +8,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -43,11 +44,10 @@ import be.geecko.openlauncher.cards.SuggestionsCard;
  * limitations under the License.
  */
 public class SuggestionsTask extends AsyncTask<String, Integer, JSONArray> {
+    private final CustomContent customContent;
 
-    private final LinearLayout cardsContainer;
-
-    public SuggestionsTask(LinearLayout cardsContainer) {
-        this.cardsContainer = cardsContainer;
+    public SuggestionsTask(CustomContent customContent) {
+        this.customContent = customContent;
     }
 
     @Override
@@ -77,19 +77,7 @@ public class SuggestionsTask extends AsyncTask<String, Integer, JSONArray> {
         super.onPostExecute(jsonResult);
         if (jsonResult == null)
             return;
-        final Context context = cardsContainer.getContext();
-        SuggestionsCard suggestionsCard;
 
-        if (cardsContainer.getChildAt(0) != null &&
-                cardsContainer.getChildAt(0) instanceof SuggestionsCard)
-            suggestionsCard = (SuggestionsCard) cardsContainer.getChildAt(0);
-        else {
-            suggestionsCard = (SuggestionsCard) LayoutInflater.from(context).inflate(
-                    R.layout.card,
-                    cardsContainer,
-                    false);
-            cardsContainer.addView(suggestionsCard);
-        }
         final int limit = jsonResult.length() > 3 ? 3 : jsonResult.length();
         final String[] results = new String[limit];
         try {
@@ -99,16 +87,20 @@ public class SuggestionsTask extends AsyncTask<String, Integer, JSONArray> {
             e.printStackTrace();
             return;
         }
-        ArrayAdapter<CharSequence> adapter = new ArrayAdapter<CharSequence>(context,
-                R.layout.card_list_adapter, results);
-        ListView resultList = ((ListView) suggestionsCard.getChildAt(0));
-        resultList.setAdapter(adapter);
+
+        ListView resultList = (ListView) LayoutInflater.from(customContent.getContext())
+                .inflate(R.layout.suggestion_listview, null);
+        resultList.setAdapter(new ArrayAdapter<CharSequence>(customContent.getContext(),
+                R.layout.card_list_adapter, results));
         resultList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                 CustomContent.search(results[i], view.getContext());
             }
         });
+
+        if (((EditText) customContent.findViewById(R.id.search_bar)).getText().length() > 0)
+            customContent.pushCard(resultList, SuggestionsCard.class);
     }
 
     private static String readUrl(String http) throws IOException {

@@ -3,11 +3,17 @@ package be.geecko.openlauncher;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
+import android.support.v7.widget.CardView;
 import android.util.AttributeSet;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import com.android.launcher3.Launcher;
@@ -15,6 +21,8 @@ import com.android.launcher3.SearchDropTargetBar;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+
+import be.geecko.openlauncher.cards.SuggestionsCard;
 
 /**
  * This file is part of OpenLauncher for Android
@@ -34,9 +42,9 @@ import java.net.URLEncoder;
  */
 public class CustomContent extends FrameLayout implements Launcher.CustomContentCallbacks {
 
+    //TODO rework cards interface
     //TODO voice
 
-    //TODO rework cards interface
     //TODO Search Phone
     //TODO Pull to refresh
     //TODO Scroll tricks
@@ -69,13 +77,29 @@ public class CustomContent extends FrameLayout implements Launcher.CustomContent
         return true;
     }
 
-    @Override
-    public void onShow() {
-
+    public void pushCard(View content, Class cardType) {
+        final LinearLayout cardsContainer = (LinearLayout) findViewById(R.id.cards_container);
+        CardView card;
+        if (cardsContainer.getChildAt(0) != null && cardType.isInstance(cardsContainer.getChildAt(0))) {
+            card = (CardView) cardsContainer.getChildAt(0);
+            card.removeAllViewsInLayout();
+        } else {
+            card = (CardView) LayoutInflater.from(getContext()).inflate(
+                    R.layout.card, cardsContainer, false);
+            cardsContainer.addView(card);
+        }
+        card.addView(content);
     }
 
     @Override
-    public void onHide() {
+    public void onShow() {
+        SearchDropTargetBar searchShortcut = (SearchDropTargetBar) ((OpenLauncher) getContext())
+                .findViewById(com.android.launcher3.R.id.search_drop_target_bar);
+        searchShortcut.setVisibility(View.GONE);
+    }
+
+    @Override
+    public void onHide() { // Search bar loses focus and keyboard is dismissed
         final View searchBar = findViewById(R.id.search_bar);
         searchBar.post(new Runnable() {
             public void run() {
@@ -89,17 +113,19 @@ public class CustomContent extends FrameLayout implements Launcher.CustomContent
 
     @Override
     public void onScrollProgressChanged(float progress) {
-        boolean hide = progress > 0.5f;
+        //Custom screen and search bar are fading in or out
+        this.setAlpha(progress);
+
         OpenLauncher openLauncher = (OpenLauncher) getContext();
-        SearchDropTargetBar searchBar = (SearchDropTargetBar) openLauncher.findViewById(
+        SearchDropTargetBar searchShortcut = (SearchDropTargetBar) openLauncher.findViewById(
                 com.android.launcher3.R.id.search_drop_target_bar);
-        if (hide)
-            searchBar.hideSearchBar(false);
-        else
-            searchBar.showSearchBar(true);
-        final View searchButtonContainer = openLauncher.findViewById(R.id.search_button_container);
-        if (searchButtonContainer != null) searchButtonContainer.setVisibility(
-                hide ? View.GONE : View.VISIBLE
-        );
+        if (searchShortcut != null) {
+            if (progress > 0.5f)
+                searchShortcut.hideSearchBar(true);
+            else {
+                searchShortcut.showSearchBar(true);
+                searchShortcut.setVisibility(View.VISIBLE);
+            }
+        }
     }
 }

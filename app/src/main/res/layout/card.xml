@@ -9,13 +9,4 @@
     card_view:cardCornerRadius="2dp"
     card_view:cardBackgroundColor="@android:color/white">
 
-    <ListView xmlns:android="http://schemas.android.com/apk/res/android"
-        android:id="@+id/card_content"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginLeft="10dp"
-        android:layout_marginRight="10dp"
-        android:dividerHeight="1dp"
-        android:divider="#e5e5e5"/>
-
 </be.geecko.openlauncher.cards.SuggestionsCard>

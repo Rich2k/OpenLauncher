@@ -1,13 +1,10 @@
 package be.geecko.openlauncher;
 
-import android.app.SearchManager;
-import android.content.ComponentName;
 import android.content.Context;
-import android.view.HapticFeedbackConstants;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -33,10 +30,6 @@ import be.geecko.openlauncher.UI.SearchBar;
  */
 public class OpenLauncher extends Launcher {
 
-    View mQsb;
-
-    //TODO red bar should not move when selection action bar is called
-
     @Override
     protected boolean hasCustomContentToLeft() {
         return true;
@@ -44,18 +37,17 @@ public class OpenLauncher extends Launcher {
 
     @Override
     protected void populateCustomContentContainer() {
-        CustomContent customContent = (CustomContent)
-                getLayoutInflater().inflate(R.layout.custom_content, null);
+        CustomContent customContent = (CustomContent) getLayoutInflater().inflate(
+                R.layout.custom_content, null);
         this.addToCustomContentPage(customContent, customContent, "Custom Content");
     }
 
     @Override
     public View getQsbBar() {
         ViewGroup mSearchDropTargetBar = this.getSearchBar();
-        if (mQsb == null && mSearchDropTargetBar != null) {
-            mQsb = getLayoutInflater().inflate(R.layout.search_bar, mSearchDropTargetBar, false);
-            this.getSearchBar().addView(mQsb);
-        }
+        View mQsb = findViewById(R.id.search_shortcut);
+        if (mQsb == null && mSearchDropTargetBar != null)
+            mQsb = getLayoutInflater().inflate(R.layout.search_bar, mSearchDropTargetBar, true);
         return mQsb;
     }
 
