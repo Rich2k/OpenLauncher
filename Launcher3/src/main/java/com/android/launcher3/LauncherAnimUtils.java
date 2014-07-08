@@ -25,13 +25,12 @@ import android.view.View;
 import android.view.ViewTreeObserver;
 
 import java.util.HashSet;
-import java.util.WeakHashMap;
 
 public class LauncherAnimUtils {
-    static WeakHashMap<Animator, Object> sAnimators = new WeakHashMap<Animator, Object>();
+    static HashSet<Animator> sAnimators = new HashSet<Animator>();
     static Animator.AnimatorListener sEndAnimListener = new Animator.AnimatorListener() {
         public void onAnimationStart(Animator animation) {
-            sAnimators.put(animation, null);
+            sAnimators.add(animation);
         }
 
         public void onAnimationRepeat(Animator animation) {
@@ -75,12 +74,13 @@ public class LauncherAnimUtils {
     }
 
     public static void onDestroyActivity() {
-        HashSet<Animator> animators = new HashSet<Animator>(sAnimators.keySet());
+        HashSet<Animator> animators = new HashSet<Animator>(sAnimators);
         for (Animator a : animators) {
             if (a.isRunning()) {
                 a.cancel();
+            } else {
+                sAnimators.remove(a);
             }
-            sAnimators.remove(a);
         }
     }
 

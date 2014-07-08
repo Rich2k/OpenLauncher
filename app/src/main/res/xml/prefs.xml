@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory android:title="@string/search_engine_pref_cat">
+
+        <ListPreference
+            android:key="search_engine"
+            android:title="@string/search_engine_pref_title"
+            android:summary="@string/search_engine_pref_sum"
+            android:defaultValue="DuckDuckGo"
+            android:entries="@array/engines"
+            android:entryValues="@array/engines" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="2nd Category">
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

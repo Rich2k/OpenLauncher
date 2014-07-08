@@ -27,7 +27,7 @@
     <permission
         android:name="com.android.launcher3.permission.WRITE_SETTINGS"
         android:permissionGroup="android.permission-group.SYSTEM_TOOLS"
-        android:protectionLevel="signatureOrSystem"
+        android:protectionLevel="normal"
         android:label="@string/permlab_write_settings"
         android:description="@string/permdesc_write_settings" />
     <permission
@@ -90,8 +90,8 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="com.android.launcher3.LauncherWallpaperPickerActivity"
-            android:theme="@style/Theme.WallpaperPicker"
+            android:name="com.android.launcher3.WallpaperPickerActivity"
+            android:theme="@style/Theme.WallpaperCropper"
             android:label="@string/pick_wallpaper"
             android:icon="@mipmap/ic_launcher_wallpaper"
             android:finishOnCloseSystemDialogs="true"
@@ -129,9 +129,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".LauncherSettings"
+            android:theme="@android:style/Theme.Holo.Light.DarkActionBar" />
+
         <service
             android:name="com.android.launcher3.MemoryTracker"
             android:enabled="@bool/debug_memory_enabled"></service>
+
         <!-- Intent received used to prepopulate the default workspace. -->
         <receiver
             android:name="com.android.launcher3.PreloadReceiver"
@@ -140,11 +145,7 @@
                 <action android:name="com.android.launcher3.action.PRELOAD_WORKSPACE" />
             </intent-filter>
         </receiver>
-        <receiver android:name="com.android.launcher3.WallpaperChangedReceiver">
-            <intent-filter>
-                <action android:name="android.intent.action.WALLPAPER_CHANGED" />
-            </intent-filter>
-        </receiver>
+
         <!-- Intent received used to install shortcuts from other applications -->
         <receiver
             android:name="com.android.launcher3.InstallShortcutReceiver"
@@ -174,8 +175,7 @@
                 <action android:name="android.intent.action.PACKAGE_CHANGED" />
                 <action android:name="android.intent.action.PACKAGE_REPLACED" />
                 <action android:name="android.intent.action.PACKAGE_REMOVED" />
-
-                <data android:scheme="package"></data>
+                <data android:scheme="package"/>
             </intent-filter>
         </receiver>
         <!-- The settings provider contains Home's data, like the workspace favorites -->

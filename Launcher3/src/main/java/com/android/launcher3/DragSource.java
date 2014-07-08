@@ -31,22 +31,6 @@ public interface DragSource {
     boolean supportsFlingToDelete();
 
     /**
-     * @return whether items dragged from this source supports 'App Info'
-     */
-    boolean supportsAppInfoDropTarget();
-
-    /**
-     * @return whether items dragged from this source supports 'Delete' drop target (e.g. to remove
-     * a shortcut.
-     */
-    boolean supportsDeleteDropTarget();
-
-    /*
-     * @return the scale of the icons over the workspace icon size
-     */
-    float getIntrinsicIconScaleFactor();
-
-    /**
      * A callback specifically made back to the source after an item from this source has been flung
      * to be deleted on a DropTarget.  In such a situation, this method will be called after
      * onDropCompleted, and more importantly, after the fling animation has completed.

@@ -65,12 +65,6 @@ public class LauncherAppWidgetHostView extends AppWidgetHostView implements Touc
     }
 
     public boolean onInterceptTouchEvent(MotionEvent ev) {
-        // Just in case the previous long press hasn't been cleared, we make sure to start fresh
-        // on touch down.
-        if (ev.getAction() == MotionEvent.ACTION_DOWN) {
-            mLongPressHelper.cancelLongPress();
-        }
-
         // Consume any touch events for ourselves after longpress is triggered
         if (mLongPressHelper.hasPerformedLongPress()) {
             mLongPressHelper.cancelLongPress();
@@ -116,15 +110,13 @@ public class LauncherAppWidgetHostView extends AppWidgetHostView implements Touc
 
     @Override
     public void onTouchComplete() {
-        if (!mLongPressHelper.hasPerformedLongPress()) {
-            // If a long press has been performed, we don't want to clear the record of that since
-            // we still may be receiving a touch up which we want to intercept
-            mLongPressHelper.cancelLongPress();
-        }
+        mLongPressHelper.cancelLongPress();
     }
 
     @Override
     public int getDescendantFocusability() {
         return ViewGroup.FOCUS_BLOCK_DESCENDANTS;
     }
+
+
 }

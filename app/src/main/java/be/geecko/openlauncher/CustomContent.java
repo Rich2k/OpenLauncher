@@ -93,8 +93,7 @@ public class CustomContent extends FrameLayout implements Launcher.CustomContent
 
     @Override
     public void onShow() {
-        SearchDropTargetBar searchShortcut = (SearchDropTargetBar) ((OpenLauncher) getContext())
-                .findViewById(com.android.launcher3.R.id.search_drop_target_bar);
+        SearchDropTargetBar searchShortcut = ((OpenLauncher) getContext()).getSearchBar();
         searchShortcut.setVisibility(View.GONE);
     }
 
@@ -116,9 +115,7 @@ public class CustomContent extends FrameLayout implements Launcher.CustomContent
         //Custom screen and search bar are fading in or out
         this.setAlpha(progress);
 
-        OpenLauncher openLauncher = (OpenLauncher) getContext();
-        SearchDropTargetBar searchShortcut = (SearchDropTargetBar) openLauncher.findViewById(
-                com.android.launcher3.R.id.search_drop_target_bar);
+        SearchDropTargetBar searchShortcut = ((OpenLauncher) getContext()).getSearchBar();
         if (searchShortcut != null) {
             if (progress > 0.5f)
                 searchShortcut.hideSearchBar(true);

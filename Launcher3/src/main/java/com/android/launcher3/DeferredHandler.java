@@ -21,7 +21,6 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.MessageQueue;
 import android.util.Pair;
-
 import java.util.LinkedList;
 import java.util.ListIterator;
 

@@ -20,7 +20,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Region;
-import android.graphics.drawable.Drawable;
+import android.graphics.Region.Op;
 import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.widget.TextView;
@@ -62,20 +62,15 @@ public class PagedViewIcon extends TextView {
         // Ensure we are using the right text size
         LauncherAppState app = LauncherAppState.getInstance();
         DeviceProfile grid = app.getDynamicGrid().getDeviceProfile();
-        setTextSize(TypedValue.COMPLEX_UNIT_PX, grid.allAppsIconTextSizePx);
+        setTextSize(TypedValue.COMPLEX_UNIT_SP, grid.iconTextSize);
     }
 
     public void applyFromApplicationInfo(AppInfo info, boolean scaleUp,
             PagedViewIcon.PressedCallback cb) {
-        LauncherAppState app = LauncherAppState.getInstance();
-        DeviceProfile grid = app.getDynamicGrid().getDeviceProfile();
-
         mIcon = info.iconBitmap;
         mPressedCallback = cb;
-        Drawable icon = Utilities.createIconDrawable(mIcon);
-        icon.setBounds(0, 0, grid.allAppsIconSizePx, grid.allAppsIconSizePx);
-        setCompoundDrawables(null, icon, null, null);
-        setCompoundDrawablePadding(grid.iconDrawablePaddingPx);
+        setCompoundDrawables(null, Utilities.createIconDrawable(mIcon),
+                null, null);
         setText(info.title);
         setTag(info);
     }

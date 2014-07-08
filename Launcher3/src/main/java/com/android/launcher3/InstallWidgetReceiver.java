@@ -16,6 +16,8 @@
 
 package com.android.launcher3;
 
+import java.util.List;
+
 import android.appwidget.AppWidgetProviderInfo;
 import android.content.ClipData;
 import android.content.Context;
@@ -31,7 +33,7 @@ import android.widget.ImageView;
 import android.widget.ListAdapter;
 import android.widget.TextView;
 
-import java.util.List;
+import com.android.launcher3.R;
 
 
 /**

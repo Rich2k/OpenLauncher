@@ -1,13 +1,14 @@
 package be.geecko.openlauncher;
 
 import android.content.Context;
+import android.content.Intent;
+import android.preference.PreferenceManager;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.android.launcher3.HolographicLinearLayout;
 import com.android.launcher3.Launcher;
 
 import be.geecko.openlauncher.UI.SearchBar;
@@ -32,32 +33,70 @@ public class OpenLauncher extends Launcher {
 
     @Override
     protected boolean hasCustomContentToLeft() {
-        return true;
+        return true; //todo: as a setting
     }
 
     @Override
-    protected void populateCustomContentContainer() {
+    protected void addCustomContentToLeft() {
         CustomContent customContent = (CustomContent) getLayoutInflater().inflate(
-                R.layout.custom_content, null);
+                R.layout.custom_content, null, false);
         this.addToCustomContentPage(customContent, customContent, "Custom Content");
     }
 
     @Override
-    public View getQsbBar() {
-        ViewGroup mSearchDropTargetBar = this.getSearchBar();
-        View mQsb = findViewById(R.id.search_shortcut);
-        if (mQsb == null && mSearchDropTargetBar != null)
-            mQsb = getLayoutInflater().inflate(R.layout.search_bar, mSearchDropTargetBar, true);
-        return mQsb;
+    protected boolean updateGlobalSearchIcon() {
+        String searchEngine = PreferenceManager
+                .getDefaultSharedPreferences(this).getString("search_engine", "DuckDuckGo");
+        switch (searchEngine) {
+            case "Google":
+                return super.updateGlobalSearchIcon();
+            default:
+                final View searchButtonContainer =
+                        findViewById(com.android.launcher3.R.id.search_button_container);
+                final ImageView searchButton =
+                        (ImageView) findViewById(com.android.launcher3.R.id.search_button);
+
+                if (searchButtonContainer != null) {
+                    searchButtonContainer.setVisibility(View.VISIBLE);
+                    searchButton.setVisibility(View.VISIBLE);
+                    searchButton.setImageResource(R.drawable.ic_home_search_normal_holo);
+                }
+                return true;
+        }
     }
 
+
     @Override
-    protected boolean updateGlobalSearchIcon() {
-        final View searchButtonContainer = findViewById(R.id.search_button_container);
-        final ImageView searchButton = (ImageView) findViewById(R.id.search_button);
-        if (searchButtonContainer != null) searchButtonContainer.setVisibility(View.VISIBLE);
-        searchButton.setVisibility(View.VISIBLE);
-        return true;
+    protected boolean updateVoiceSearchIcon(boolean searchVisible) {
+        String searchEngine = PreferenceManager
+                .getDefaultSharedPreferences(this).getString("search_engine", "DuckDuckGo");
+        switch (searchEngine) {
+            case "Google":
+                return super.updateVoiceSearchIcon(searchVisible);
+            default:
+                final HolographicLinearLayout voiceButtonContainer = (HolographicLinearLayout)
+                        findViewById(com.android.launcher3.R.id.voice_button_container);
+                final ImageView voiceButton =
+                        (ImageView) findViewById(com.android.launcher3.R.id.voice_button);
+                if (searchVisible) {
+                    if (voiceButtonContainer != null) {
+                        voiceButtonContainer.setVisibility(View.VISIBLE);
+                    }
+                    if (voiceButton != null) {
+                        voiceButton.setVisibility(View.VISIBLE);
+                        voiceButton.setImageResource(
+                                com.android.launcher3.R.drawable.ic_home_voice_search_holo
+                        );
+                        voiceButton.invalidate();
+                    }
+                    updateVoiceButtonProxyVisible(false);
+                } else {
+                    if (voiceButtonContainer != null) voiceButtonContainer.setVisibility(View.GONE);
+                    if (voiceButton != null) voiceButton.setVisibility(View.GONE);
+                    updateVoiceButtonProxyVisible(true);
+                }
+                return searchVisible;
+        }
     }
 
     @Override
@@ -77,22 +116,25 @@ public class OpenLauncher extends Launcher {
 
     @Override
     public void startVoice() {
-        Toast.makeText(this, "voice", Toast.LENGTH_SHORT).show();
-        //todo
-    }
-
-    @Override
-    protected boolean hasSettings() {
-        return true;
+        String searchEngine = PreferenceManager
+                .getDefaultSharedPreferences(this).getString("search_engine", "DuckDuckGo");
+        switch (searchEngine) {
+            case "Google":
+                super.startVoice();
+                break;
+            default:
+                Toast.makeText(this, "voice", Toast.LENGTH_SHORT).show();
+                //todo
+                break;
+        }
     }
 
     @Override
     protected void startSettings() {
-        //todo
+        startActivity(new Intent(this, LauncherSettings.class));
     }
 
     public void clearSearchBar(View view) {
         ((SearchBar) findViewById(R.id.search_bar)).setText("");
     }
-
 }

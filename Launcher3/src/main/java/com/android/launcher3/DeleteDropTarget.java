@@ -29,7 +29,6 @@ import android.content.res.Resources;
 import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.drawable.TransitionDrawable;
-import android.os.AsyncTask;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewConfiguration;
@@ -96,7 +95,7 @@ public class DeleteDropTarget extends ButtonDropTarget {
     }
 
     private boolean isAllAppsApplication(DragSource source, Object info) {
-        return source.supportsAppInfoDropTarget() && (info instanceof AppInfo);
+        return (source instanceof AppsCustomizePagedView) && (info instanceof AppInfo);
     }
     private boolean isAllAppsWidget(DragSource source, Object info) {
         if (source instanceof AppsCustomizePagedView) {
@@ -146,12 +145,12 @@ public class DeleteDropTarget extends ButtonDropTarget {
                 return true;
             }
 
-            if (!LauncherAppState.isDisableAllApps() &&
+            if (!AppsCustomizePagedView.DISABLE_ALL_APPS &&
                     item.itemType == LauncherSettings.Favorites.ITEM_TYPE_FOLDER) {
                 return true;
             }
 
-            if (!LauncherAppState.isDisableAllApps() &&
+            if (!AppsCustomizePagedView.DISABLE_ALL_APPS &&
                     item.itemType == LauncherSettings.Favorites.ITEM_TYPE_APPLICATION &&
                     item instanceof AppInfo) {
                 AppInfo appInfo = (AppInfo) info;
@@ -160,7 +159,7 @@ public class DeleteDropTarget extends ButtonDropTarget {
 
             if (item.itemType == LauncherSettings.Favorites.ITEM_TYPE_APPLICATION &&
                 item instanceof ShortcutInfo) {
-                if (LauncherAppState.isDisableAllApps()) {
+                if (AppsCustomizePagedView.DISABLE_ALL_APPS) {
                     ShortcutInfo shortcutInfo = (ShortcutInfo) info;
                     return (shortcutInfo.flags & AppInfo.DOWNLOADED_FLAG) != 0;
                 } else {
@@ -174,9 +173,8 @@ public class DeleteDropTarget extends ButtonDropTarget {
     @Override
     public void onDragStart(DragSource source, Object info, int dragAction) {
         boolean isVisible = true;
-        boolean useUninstallLabel = !LauncherAppState.isDisableAllApps() &&
+        boolean useUninstallLabel = !AppsCustomizePagedView.DISABLE_ALL_APPS &&
                 isAllAppsApplication(source, info);
-        boolean useDeleteLabel = !useUninstallLabel && source.supportsDeleteDropTarget();
 
         // If we are dragging an application from AppsCustomize, only show the control if we can
         // delete the app (it was downloaded), and rename the string to "uninstall" in such a case.
@@ -187,17 +185,15 @@ public class DeleteDropTarget extends ButtonDropTarget {
 
         if (useUninstallLabel) {
             setCompoundDrawablesRelativeWithIntrinsicBounds(mUninstallDrawable, null, null, null);
-        } else if (useDeleteLabel) {
-            setCompoundDrawablesRelativeWithIntrinsicBounds(mRemoveDrawable, null, null, null);
         } else {
-            isVisible = false;
+            setCompoundDrawablesRelativeWithIntrinsicBounds(mRemoveDrawable, null, null, null);
         }
         mCurrentDrawable = (TransitionDrawable) getCurrentDrawable();
 
         mActive = isVisible;
         resetHoverColor();
         ((ViewGroup) getParent()).setVisibility(isVisible ? View.VISIBLE : View.GONE);
-        if (isVisible && getText().length() > 0) {
+        if (getText().length() > 0) {
             setText(useUninstallLabel ? R.string.delete_target_uninstall_label
                 : R.string.delete_target_label);
         }
@@ -264,10 +260,21 @@ public class DeleteDropTarget extends ButtonDropTarget {
     }
 
     private boolean isUninstallFromWorkspace(DragObject d) {
-        if (LauncherAppState.isDisableAllApps() && isWorkspaceOrFolderApplication(d)) {
+        if (AppsCustomizePagedView.DISABLE_ALL_APPS && isWorkspaceOrFolderApplication(d)) {
             ShortcutInfo shortcut = (ShortcutInfo) d.dragInfo;
-            // Only allow manifest shortcuts to initiate an un-install.
-            return !InstallShortcutReceiver.isValidShortcutLaunchIntent(shortcut.intent);
+            if (shortcut.intent != null && shortcut.intent.getComponent() != null) {
+                Set<String> categories = shortcut.intent.getCategories();
+                boolean includesLauncherCategory = false;
+                if (categories != null) {
+                    for (String category : categories) {
+                        if (category.equals(Intent.CATEGORY_LAUNCHER)) {
+                            includesLauncherCategory = true;
+                            break;
+                        }
+                    }
+                }
+                return includesLauncherCategory;
+            }
         }
         return false;
     }
@@ -327,12 +334,11 @@ public class DeleteDropTarget extends ButtonDropTarget {
             if (appWidgetHost != null) {
                 // Deleting an app widget ID is a void call but writes to disk before returning
                 // to the caller...
-                new AsyncTask<Void, Void, Void>() {
-                    public Void doInBackground(Void ... args) {
+                new Thread("deleteAppWidgetId") {
+                    public void run() {
                         appWidgetHost.deleteAppWidgetId(launcherAppWidgetInfo.appWidgetId);
-                        return null;
                     }
-                }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, (Void) null);
+                }.start();
             }
         }
         if (wasWaitingForUninstall && !mWaitingForUninstall) {

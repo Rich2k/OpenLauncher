@@ -40,10 +40,8 @@ import android.os.Process;
 import android.os.RemoteException;
 import android.os.SystemClock;
 import android.provider.BaseColumns;
-import android.text.TextUtils;
 import android.util.Log;
 import android.util.Pair;
-
 import com.android.launcher3.InstallWidgetReceiver.WidgetMimeTypeHandlerData;
 
 import java.lang.ref.WeakReference;
@@ -75,15 +73,8 @@ public class LauncherModel extends BroadcastReceiver {
     // false = strew non-workspace apps across the workspace on upgrade
     public static final boolean UPGRADE_USE_MORE_APPS_FOLDER = false;
 
-    public static final int LOADER_FLAG_NONE = 0;
-    public static final int LOADER_FLAG_CLEAR_WORKSPACE = 1 << 0;
-    public static final int LOADER_FLAG_MIGRATE_SHORTCUTS = 1 << 1;
-
     private static final int ITEMS_CHUNK = 6; // batch size for the workspace icons
-    private static final long INVALID_SCREEN_ID = -1L;
-
     private final boolean mAppsCanBeOnRemoveableStorage;
-    private final boolean mOldContentProviderExists;
 
     private final LauncherAppState mApp;
     private final Object mLock = new Object();
@@ -174,7 +165,8 @@ public class LauncherModel extends BroadcastReceiver {
                                   ArrayList<AppInfo> addedApps);
         public void bindAppsUpdated(ArrayList<AppInfo> apps);
         public void bindComponentsRemoved(ArrayList<String> packageNames,
-                        ArrayList<AppInfo> appInfos);
+                        ArrayList<AppInfo> appInfos,
+                        boolean matchPackageNamesOnly);
         public void bindPackagesUpdated(ArrayList<Object> widgetsAndShortcuts);
         public void bindSearchablesChanged();
         public boolean isAllAppsButtonRank(int rank);
@@ -187,15 +179,15 @@ public class LauncherModel extends BroadcastReceiver {
     }
 
     LauncherModel(LauncherAppState app, IconCache iconCache, AppFilter appFilter) {
-        Context context = app.getContext();
-        ContentResolver contentResolver = context.getContentResolver();
+        final Context context = app.getContext();
 
         mAppsCanBeOnRemoveableStorage = Environment.isExternalStorageRemovable();
-        mOldContentProviderExists = (contentResolver.acquireContentProviderClient(
-                LauncherSettings.Favorites.OLD_CONTENT_URI) != null);
         mApp = app;
         mBgAllAppsList = new AllAppsList(iconCache, appFilter);
         mIconCache = iconCache;
+
+        mDefaultIcon = Utilities.createIconBitmap(
+                mIconCache.getFullResDefaultActivityIcon(), context);
 
         final Resources res = context.getResources();
         Configuration config = res.getConfiguration();
@@ -225,10 +217,6 @@ public class LauncherModel extends BroadcastReceiver {
             // If we are not on the worker thread, then post to the worker handler
             sWorker.post(r);
         }
-    }
-
-    boolean canMigrateFromOldLauncherDb(Launcher launcher) {
-        return mOldContentProviderExists && !launcher.isLauncherPreinstalled() ;
     }
 
     static boolean findNextAvailableIconSpaceInScreen(ArrayList<ItemInfo> items, int[] xy,
@@ -298,10 +286,7 @@ public class LauncherModel extends BroadcastReceiver {
         addAndBindAddedApps(context, workspaceApps, cb, allAppsApps);
     }
     public void addAndBindAddedApps(final Context context, final ArrayList<ItemInfo> workspaceApps,
-                                final Callbacks callbacks, final ArrayList<AppInfo> allAppsApps) {
-        if (workspaceApps == null || allAppsApps == null) {
-            throw new RuntimeException("workspaceApps and allAppsApps must not be null");
-        }
+                                    final Callbacks callbacks, final ArrayList<AppInfo> allAppsApps) {
         if (workspaceApps.isEmpty() && allAppsApps.isEmpty()) {
             return;
         }
@@ -415,11 +400,6 @@ public class LauncherModel extends BroadcastReceiver {
     }
 
     public Bitmap getFallbackIcon() {
-        if (mDefaultIcon == null) {
-            final Context context = LauncherAppState.getInstance().getContext();
-            mDefaultIcon = Utilities.createIconBitmap(
-                    mIconCache.getFullResDefaultActivityIcon(), context);
-        }
         return Bitmap.createBitmap(mDefaultIcon);
     }
 
@@ -515,7 +495,8 @@ public class LauncherModel extends BroadcastReceiver {
             if (stackTrace != null) {
                 e.setStackTrace(stackTrace);
             }
-            throw e;
+            // TODO: something breaks this in the upgrade path
+            //throw e;
         }
     }
 
@@ -599,9 +580,8 @@ public class LauncherModel extends BroadcastReceiver {
             // as in Workspace.onDrop. Here, we just add/remove them from the list of items
             // that are on the desktop, as appropriate
             ItemInfo modelItem = sBgItemsIdMap.get(itemId);
-            if (modelItem != null &&
-                    (modelItem.container == LauncherSettings.Favorites.CONTAINER_DESKTOP ||
-                     modelItem.container == LauncherSettings.Favorites.CONTAINER_HOTSEAT)) {
+            if (modelItem.container == LauncherSettings.Favorites.CONTAINER_DESKTOP ||
+                    modelItem.container == LauncherSettings.Favorites.CONTAINER_HOTSEAT) {
                 switch (modelItem.itemType) {
                     case LauncherSettings.Favorites.ITEM_TYPE_APPLICATION:
                     case LauncherSettings.Favorites.ITEM_TYPE_SHORTCUT:
@@ -975,10 +955,6 @@ public class LauncherModel extends BroadcastReceiver {
      * a list of screen ids in the order that they should appear.
      */
     void updateWorkspaceScreenOrder(Context context, final ArrayList<Long> screens) {
-        // Log to disk
-        Launcher.addDumpLog(TAG, "11683562 - updateWorkspaceScreenOrder()", true);
-        Launcher.addDumpLog(TAG, "11683562 -   screens: " + TextUtils.join(", ", screens), true);
-
         final ArrayList<Long> screensCopy = new ArrayList<Long>(screens);
         final ContentResolver cr = context.getContentResolver();
         final Uri uri = LauncherSettings.WorkspaceScreens.CONTENT_URI;
@@ -995,23 +971,18 @@ public class LauncherModel extends BroadcastReceiver {
         Runnable r = new Runnable() {
             @Override
             public void run() {
-                ArrayList<ContentProviderOperation> ops = new ArrayList<ContentProviderOperation>();
                 // Clear the table
-                ops.add(ContentProviderOperation.newDelete(uri).build());
+                cr.delete(uri, null, null);
                 int count = screensCopy.size();
+                ContentValues[] values = new ContentValues[count];
                 for (int i = 0; i < count; i++) {
                     ContentValues v = new ContentValues();
                     long screenId = screensCopy.get(i);
                     v.put(LauncherSettings.WorkspaceScreens._ID, screenId);
                     v.put(LauncherSettings.WorkspaceScreens.SCREEN_RANK, i);
-                    ops.add(ContentProviderOperation.newInsert(uri).withValues(v).build());
+                    values[i] = v;
                 }
-
-                try {
-                    cr.applyBatch(LauncherProvider.AUTHORITY, ops);
-                } catch (Exception ex) {
-                    throw new RuntimeException(ex);
-                }
+                cr.bulkInsert(uri, values);
 
                 synchronized (sBgLock) {
                     sBgWorkspaceScreens.clear();
@@ -1106,29 +1077,15 @@ public class LauncherModel extends BroadcastReceiver {
             }
 
         } else if (Intent.ACTION_EXTERNAL_APPLICATIONS_AVAILABLE.equals(action)) {
-            final boolean replacing = intent.getBooleanExtra(Intent.EXTRA_REPLACING, false);
+            // First, schedule to add these apps back in.
             String[] packages = intent.getStringArrayExtra(Intent.EXTRA_CHANGED_PACKAGE_LIST);
-            if (!replacing) {
-                enqueuePackageUpdated(new PackageUpdatedTask(PackageUpdatedTask.OP_ADD, packages));
-                if (mAppsCanBeOnRemoveableStorage) {
-                    // Only rebind if we support removable storage.  It catches the case where
-                    // apps on the external sd card need to be reloaded
-                    startLoaderFromBackground();
-                }
-            } else {
-                // If we are replacing then just update the packages in the list
-                enqueuePackageUpdated(new PackageUpdatedTask(PackageUpdatedTask.OP_UPDATE,
-                        packages));
-            }
+            enqueuePackageUpdated(new PackageUpdatedTask(PackageUpdatedTask.OP_ADD, packages));
+            // Then, rebind everything.
+            startLoaderFromBackground();
         } else if (Intent.ACTION_EXTERNAL_APPLICATIONS_UNAVAILABLE.equals(action)) {
-            final boolean replacing = intent.getBooleanExtra(Intent.EXTRA_REPLACING, false);
-            if (!replacing) {
-                String[] packages = intent.getStringArrayExtra(Intent.EXTRA_CHANGED_PACKAGE_LIST);
-                enqueuePackageUpdated(new PackageUpdatedTask(
-                            PackageUpdatedTask.OP_UNAVAILABLE, packages));
-            }
-            // else, we are replacing the packages, so ignore this event and wait for
-            // EXTERNAL_APPLICATIONS_AVAILABLE to update the packages at that time
+            String[] packages = intent.getStringArrayExtra(Intent.EXTRA_CHANGED_PACKAGE_LIST);
+            enqueuePackageUpdated(new PackageUpdatedTask(
+                        PackageUpdatedTask.OP_UNAVAILABLE, packages));
         } else if (Intent.ACTION_LOCALE_CHANGED.equals(action)) {
             // If we have changed locale we need to clear out the labels in all apps/workspace.
             forceReload();
@@ -1192,7 +1149,7 @@ public class LauncherModel extends BroadcastReceiver {
             }
         }
         if (runLoader) {
-            startLoader(false, PagedView.INVALID_RESTORE_PAGE);
+            startLoader(false, -1);
         }
     }
 
@@ -1211,10 +1168,6 @@ public class LauncherModel extends BroadcastReceiver {
     }
 
     public void startLoader(boolean isLaunching, int synchronousBindPage) {
-        startLoader(isLaunching, synchronousBindPage, LOADER_FLAG_NONE);
-    }
-
-    public void startLoader(boolean isLaunching, int synchronousBindPage, int loadFlags) {
         synchronized (mLock) {
             if (DEBUG_LOADERS) {
                 Log.d(TAG, "startLoader isLaunching=" + isLaunching);
@@ -1229,9 +1182,8 @@ public class LauncherModel extends BroadcastReceiver {
                 // If there is already one running, tell it to stop.
                 // also, don't downgrade isLaunching if we're already running
                 isLaunching = isLaunching || stopLoaderLocked();
-                mLoaderTask = new LoaderTask(mApp.getContext(), isLaunching, loadFlags);
-                if (synchronousBindPage != PagedView.INVALID_RESTORE_PAGE
-                        && mAllAppsLoaded && mWorkspaceLoaded) {
+                mLoaderTask = new LoaderTask(mApp.getContext(), isLaunching);
+                if (synchronousBindPage > -1 && mAllAppsLoaded && mWorkspaceLoaded) {
                     mLoaderTask.runBindSynchronousPage(synchronousBindPage);
                 } else {
                     sWorkerThread.setPriority(Thread.NORM_PRIORITY);
@@ -1283,15 +1235,6 @@ public class LauncherModel extends BroadcastReceiver {
         } finally {
             sc.close();
         }
-
-        // Log to disk
-        Launcher.addDumpLog(TAG, "11683562 - loadWorkspaceScreensDb()", true);
-        ArrayList<String> orderedScreensPairs= new ArrayList<String>();
-        for (Integer i : orderedScreens.keySet()) {
-            orderedScreensPairs.add("{ " + i + ": " + orderedScreens.get(i) + " }");
-        }
-        Launcher.addDumpLog(TAG, "11683562 -   screens: " +
-                TextUtils.join(", ", orderedScreensPairs), true);
         return orderedScreens;
     }
 
@@ -1320,15 +1263,13 @@ public class LauncherModel extends BroadcastReceiver {
         private boolean mIsLoadingAndBindingWorkspace;
         private boolean mStopped;
         private boolean mLoadAndBindStepFinished;
-        private int mFlags;
 
         private HashMap<Object, CharSequence> mLabelCache;
 
-        LoaderTask(Context context, boolean isLaunching, int flags) {
+        LoaderTask(Context context, boolean isLaunching) {
             mContext = context;
             mIsLaunching = isLaunching;
             mLabelCache = new HashMap<Object, CharSequence>();
-            mFlags = flags;
         }
 
         boolean isLaunching() {
@@ -1401,7 +1342,7 @@ public class LauncherModel extends BroadcastReceiver {
         }
 
         void runBindSynchronousPage(int synchronousBindPage) {
-            if (synchronousBindPage == PagedView.INVALID_RESTORE_PAGE) {
+            if (synchronousBindPage < 0) {
                 // Ensure that we have a valid page index to load synchronously
                 throw new RuntimeException("Should not call runBindSynchronousPage() without " +
                         "valid page index");
@@ -1490,7 +1431,7 @@ public class LauncherModel extends BroadcastReceiver {
                 sBgDbIconCache.clear();
             }
 
-            if (LauncherAppState.isDisableAllApps()) {
+            if (AppsCustomizePagedView.DISABLE_ALL_APPS) {
                 // Ensure that all the applications that are in the system are
                 // represented on the home screen.
                 if (!UPGRADE_USE_MORE_APPS_FOLDER || !isUpgrade) {
@@ -1567,55 +1508,46 @@ public class LauncherModel extends BroadcastReceiver {
             }
             if (!added.isEmpty()) {
                 Callbacks cb = mCallbacks != null ? mCallbacks.get() : null;
-                addAndBindAddedApps(context, added, cb, new ArrayList<AppInfo>());
+                addAndBindAddedApps(context, added, cb, null);
             }
+        }
+
+        private boolean checkItemDimensions(ItemInfo info) {
+            LauncherAppState app = LauncherAppState.getInstance();
+            DeviceProfile grid = app.getDynamicGrid().getDeviceProfile();
+            return (info.cellX + info.spanX) > (int) grid.numColumns ||
+                    (info.cellY + info.spanY) > (int) grid.numRows;
         }
 
         // check & update map of what's occupied; used to discard overlapping/invalid items
         private boolean checkItemPlacement(HashMap<Long, ItemInfo[][]> occupied, ItemInfo item,
-                                           AtomicBoolean deleteOnInvalidPlacement) {
+                                           AtomicBoolean deleteOnItemOverlap) {
             LauncherAppState app = LauncherAppState.getInstance();
             DeviceProfile grid = app.getDynamicGrid().getDeviceProfile();
-            final int countX = (int) grid.numColumns;
-            final int countY = (int) grid.numRows;
+            int countX = (int) grid.numColumns;
+            int countY = (int) grid.numRows;
 
             long containerIndex = item.screenId;
             if (item.container == LauncherSettings.Favorites.CONTAINER_HOTSEAT) {
                 // Return early if we detect that an item is under the hotseat button
                 if (mCallbacks == null ||
                         mCallbacks.get().isAllAppsButtonRank((int) item.screenId)) {
-                    deleteOnInvalidPlacement.set(true);
-                    Log.e(TAG, "Error loading shortcut into hotseat " + item
-                            + " into position (" + item.screenId + ":" + item.cellX + ","
-                            + item.cellY + ") occupied by all apps");
+                    deleteOnItemOverlap.set(true);
                     return false;
                 }
 
-                final ItemInfo[][] hotseatItems =
-                        occupied.get((long) LauncherSettings.Favorites.CONTAINER_HOTSEAT);
-
-                if (item.screenId >= grid.numHotseatIcons) {
-                    Log.e(TAG, "Error loading shortcut " + item
-                            + " into hotseat position " + item.screenId
-                            + ", position out of bounds: (0 to " + (grid.numHotseatIcons - 1)
-                            + ")");
-                    return false;
-                }
-
-                if (hotseatItems != null) {
-                    if (hotseatItems[(int) item.screenId][0] != null) {
+                if (occupied.containsKey(LauncherSettings.Favorites.CONTAINER_HOTSEAT)) {
+                    if (occupied.get(LauncherSettings.Favorites.CONTAINER_HOTSEAT)
+                            [(int) item.screenId][0] != null) {
                         Log.e(TAG, "Error loading shortcut into hotseat " + item
                                 + " into position (" + item.screenId + ":" + item.cellX + ","
                                 + item.cellY + ") occupied by "
                                 + occupied.get(LauncherSettings.Favorites.CONTAINER_HOTSEAT)
                                 [(int) item.screenId][0]);
                             return false;
-                    } else {
-                        hotseatItems[(int) item.screenId][0] = item;
-                        return true;
                     }
                 } else {
-                    final ItemInfo[][] items = new ItemInfo[(int) grid.numHotseatIcons][1];
+                    ItemInfo[][] items = new ItemInfo[countX + 1][countY + 1];
                     items[(int) item.screenId][0] = item;
                     occupied.put((long) LauncherSettings.Favorites.CONTAINER_HOTSEAT, items);
                     return true;
@@ -1630,17 +1562,7 @@ public class LauncherModel extends BroadcastReceiver {
                 occupied.put(item.screenId, items);
             }
 
-            final ItemInfo[][] screens = occupied.get(item.screenId);
-            if (item.container == LauncherSettings.Favorites.CONTAINER_DESKTOP &&
-                    item.cellX < 0 || item.cellY < 0 ||
-                    item.cellX + item.spanX > countX || item.cellY + item.spanY > countY) {
-                Log.e(TAG, "Error loading shortcut " + item
-                        + " into cell (" + containerIndex + "-" + item.screenId + ":"
-                        + item.cellX + "," + item.cellY
-                        + ") out of screen bounds ( " + countX + "x" + countY + ")");
-                return false;
-            }
-
+            ItemInfo[][] screens = occupied.get(item.screenId);
             // Check if any workspace icons overlap with each other
             for (int x = item.cellX; x < (item.cellX+item.spanX); x++) {
                 for (int y = item.cellY; y < (item.cellY+item.spanY); y++) {
@@ -1675,11 +1597,8 @@ public class LauncherModel extends BroadcastReceiver {
             }
         }
 
-        /** Returns whether this is an upgrade path */
+        /** Returns whether this is an upgradge path */
         private boolean loadWorkspace() {
-            // Log to disk
-            Launcher.addDumpLog(TAG, "11683562 - loadWorkspace()", true);
-
             final long t = DEBUG_LOADERS ? SystemClock.uptimeMillis() : 0;
 
             final Context context = mContext;
@@ -1693,33 +1612,16 @@ public class LauncherModel extends BroadcastReceiver {
             int countX = (int) grid.numColumns;
             int countY = (int) grid.numRows;
 
-            if ((mFlags & LOADER_FLAG_CLEAR_WORKSPACE) != 0) {
-                Launcher.addDumpLog(TAG, "loadWorkspace: resetting launcher database", true);
-                LauncherAppState.getLauncherProvider().deleteDatabase();
-            }
-
-            if ((mFlags & LOADER_FLAG_MIGRATE_SHORTCUTS) != 0) {
-                // append the user's Launcher2 shortcuts
-                Launcher.addDumpLog(TAG, "loadWorkspace: migrating from launcher2", true);
-                LauncherAppState.getLauncherProvider().migrateLauncher2Shortcuts();
-            } else {
-                // Make sure the default workspace is loaded
-                Launcher.addDumpLog(TAG, "loadWorkspace: loading default favorites", false);
-                LauncherAppState.getLauncherProvider().loadDefaultFavoritesIfNecessary(0);
-            }
+            // Make sure the default workspace is loaded, if needed
+            LauncherAppState.getLauncherProvider().loadDefaultFavoritesIfNecessary(0);
 
             // Check if we need to do any upgrade-path logic
-            // (Includes having just imported default favorites)
             boolean loadedOldDb = LauncherAppState.getLauncherProvider().justLoadedOldDb();
-
-            // Log to disk
-            Launcher.addDumpLog(TAG, "11683562 -   loadedOldDb: " + loadedOldDb, true);
 
             synchronized (sBgLock) {
                 clearSBgDataStructures();
 
                 final ArrayList<Long> itemsToRemove = new ArrayList<Long>();
-                final ArrayList<Long> restoredRows = new ArrayList<Long>();
                 final Uri contentUri = LauncherSettings.Favorites.CONTENT_URI;
                 if (DEBUG_LOADERS) Log.d(TAG, "loading model from " + contentUri);
                 final Cursor c = contentResolver.query(contentUri, null, null, null, null);
@@ -1760,8 +1662,6 @@ public class LauncherModel extends BroadcastReceiver {
                             (LauncherSettings.Favorites.SPANX);
                     final int spanYIndex = c.getColumnIndexOrThrow(
                             LauncherSettings.Favorites.SPANY);
-                    final int restoredIndex = c.getColumnIndexOrThrow(
-                            LauncherSettings.Favorites.RESTORED);
                     //final int uriIndex = c.getColumnIndexOrThrow(LauncherSettings.Favorites.URI);
                     //final int displayModeIndex = c.getColumnIndexOrThrow(
                     //        LauncherSettings.Favorites.DISPLAY_MODE);
@@ -1774,10 +1674,9 @@ public class LauncherModel extends BroadcastReceiver {
                     Intent intent;
 
                     while (!mStopped && c.moveToNext()) {
-                        AtomicBoolean deleteOnInvalidPlacement = new AtomicBoolean(false);
+                        AtomicBoolean deleteOnItemOverlap = new AtomicBoolean(false);
                         try {
                             int itemType = c.getInt(itemTypeIndex);
-                            boolean restored = 0 != c.getInt(restoredIndex);
 
                             switch (itemType) {
                             case LauncherSettings.Favorites.ITEM_TYPE_APPLICATION:
@@ -1788,44 +1687,24 @@ public class LauncherModel extends BroadcastReceiver {
                                     intent = Intent.parseUri(intentDescription, 0);
                                     ComponentName cn = intent.getComponent();
                                     if (cn != null && !isValidPackageComponent(manager, cn)) {
-                                        if (restored) {
-                                            // might be installed later
-                                            Launcher.addDumpLog(TAG,
-                                                    "package not yet restored: " + cn, true);
+                                        if (!mAppsCanBeOnRemoveableStorage) {
+                                            // Log the invalid package, and remove it from the db
+                                            Launcher.addDumpLog(TAG, "Invalid package removed: " + cn, true);
+                                            itemsToRemove.add(id);
                                         } else {
-                                            if (!mAppsCanBeOnRemoveableStorage) {
-                                                // Log the invalid package, and remove it
-                                                Launcher.addDumpLog(TAG,
-                                                        "Invalid package removed: " + cn, true);
-                                                itemsToRemove.add(id);
-                                            } else {
-                                                // If apps can be on external storage, then we just
-                                                // leave them for the user to remove (maybe add
-                                                // visual treatment to it)
-                                                Launcher.addDumpLog(TAG,
-                                                        "Invalid package found: " + cn, true);
-                                            }
-                                            continue;
+                                            // If apps can be on external storage, then we just
+                                            // leave them for the user to remove (maybe add
+                                            // visual treatment to it)
+                                            Launcher.addDumpLog(TAG, "Invalid package found: " + cn, true);
                                         }
-                                    } else if (restored) {
-                                        // no special handling necessary for this restored item
-                                        restoredRows.add(id);
-                                        restored = false;
+                                        continue;
                                     }
                                 } catch (URISyntaxException e) {
-                                    Launcher.addDumpLog(TAG,
-                                            "Invalid uri: " + intentDescription, true);
+                                    Launcher.addDumpLog(TAG, "Invalid uri: " + intentDescription, true);
                                     continue;
                                 }
 
-                                if (restored) {
-                                    Launcher.addDumpLog(TAG,
-                                            "constructing info for partially restored package",
-                                            true);
-                                    info = getRestoredItemInfo(c, titleIndex);
-                                    intent = getRestoredItemIntent(c, context, intent);
-                                } else if (itemType ==
-                                        LauncherSettings.Favorites.ITEM_TYPE_APPLICATION) {
+                                if (itemType == LauncherSettings.Favorites.ITEM_TYPE_APPLICATION) {
                                     info = getShortcutInfo(manager, intent, context, c, iconIndex,
                                             titleIndex, mLabelCache);
                                 } else {
@@ -1856,11 +1735,18 @@ public class LauncherModel extends BroadcastReceiver {
                                     info.cellY = c.getInt(cellYIndex);
                                     info.spanX = 1;
                                     info.spanY = 1;
-
+                                    // Skip loading items that are out of bounds
+                                    if (container == LauncherSettings.Favorites.CONTAINER_DESKTOP) {
+                                        if (checkItemDimensions(info)) {
+                                            Launcher.addDumpLog(TAG, "Skipped loading out of bounds shortcut: "
+                                                    + info + ", " + grid.numColumns + "x" + grid.numRows, true);
+                                            continue;
+                                        }
+                                    }
                                     // check & update map of what's occupied
-                                    deleteOnInvalidPlacement.set(false);
-                                    if (!checkItemPlacement(occupied, info, deleteOnInvalidPlacement)) {
-                                        if (deleteOnInvalidPlacement.get()) {
+                                    deleteOnItemOverlap.set(false);
+                                    if (!checkItemPlacement(occupied, info, deleteOnItemOverlap)) {
+                                        if (deleteOnItemOverlap.get()) {
                                             itemsToRemove.add(id);
                                         }
                                         break;
@@ -1902,11 +1788,18 @@ public class LauncherModel extends BroadcastReceiver {
                                 folderInfo.spanX = 1;
                                 folderInfo.spanY = 1;
 
+                                // Skip loading items that are out of bounds
+                                if (container == LauncherSettings.Favorites.CONTAINER_DESKTOP) {
+                                    if (checkItemDimensions(folderInfo)) {
+                                        Log.d(TAG, "Skipped loading out of bounds folder");
+                                        continue;
+                                    }
+                                }
                                 // check & update map of what's occupied
-                                deleteOnInvalidPlacement.set(false);
+                                deleteOnItemOverlap.set(false);
                                 if (!checkItemPlacement(occupied, folderInfo,
-                                        deleteOnInvalidPlacement)) {
-                                    if (deleteOnInvalidPlacement.get()) {
+                                        deleteOnItemOverlap)) {
+                                    if (deleteOnItemOverlap.get()) {
                                         itemsToRemove.add(id);
                                     }
                                     break;
@@ -1917,11 +1810,6 @@ public class LauncherModel extends BroadcastReceiver {
                                     case LauncherSettings.Favorites.CONTAINER_HOTSEAT:
                                         sBgWorkspaceItems.add(folderInfo);
                                         break;
-                                }
-
-                                if (restored) {
-                                    // no special handling required for restored folders
-                                    restoredRows.add(id);
                                 }
 
                                 sBgItemsIdMap.put(folderInfo.id, folderInfo);
@@ -1967,11 +1855,18 @@ public class LauncherModel extends BroadcastReceiver {
                                     }
 
                                     appWidgetInfo.container = c.getInt(containerIndex);
+                                    // Skip loading items that are out of bounds
+                                    if (container == LauncherSettings.Favorites.CONTAINER_DESKTOP) {
+                                        if (checkItemDimensions(appWidgetInfo)) {
+                                            Log.d(TAG, "Skipped loading out of bounds app widget");
+                                            continue;
+                                        }
+                                    }
                                     // check & update map of what's occupied
-                                    deleteOnInvalidPlacement.set(false);
+                                    deleteOnItemOverlap.set(false);
                                     if (!checkItemPlacement(occupied, appWidgetInfo,
-                                            deleteOnInvalidPlacement)) {
-                                        if (deleteOnInvalidPlacement.get()) {
+                                            deleteOnItemOverlap)) {
+                                        if (deleteOnItemOverlap.get()) {
                                             itemsToRemove.add(id);
                                         }
                                         break;
@@ -1991,7 +1886,7 @@ public class LauncherModel extends BroadcastReceiver {
                                 break;
                             }
                         } catch (Exception e) {
-                            Launcher.addDumpLog(TAG, "Desktop items loading interrupted", e, true);
+                            Launcher.addDumpLog(TAG, "Desktop items loading interrupted: " + e, true);
                         }
                     }
                 } finally {
@@ -2024,25 +1919,6 @@ public class LauncherModel extends BroadcastReceiver {
                     }
                 }
 
-                if (restoredRows.size() > 0) {
-                    ContentProviderClient updater = contentResolver.acquireContentProviderClient(
-                            LauncherSettings.Favorites.CONTENT_URI);
-                    // Update restored items that no longer require special handling
-                    try {
-                        StringBuilder selectionBuilder = new StringBuilder();
-                        selectionBuilder.append(LauncherSettings.Favorites._ID);
-                        selectionBuilder.append(" IN (");
-                        selectionBuilder.append(TextUtils.join(", ", restoredRows));
-                        selectionBuilder.append(")");
-                        ContentValues values = new ContentValues();
-                        values.put(LauncherSettings.Favorites.RESTORED, 0);
-                        updater.update(LauncherSettings.Favorites.CONTENT_URI,
-                                values, selectionBuilder.toString(), null);
-                    } catch (RemoteException e) {
-                        Log.w(TAG, "Could not update restored rows");
-                    }
-                }
-
                 if (loadedOldDb) {
                     long maxScreenId = 0;
                     // If we're importing we use the old screen order.
@@ -2057,10 +1933,6 @@ public class LauncherModel extends BroadcastReceiver {
                         }
                     }
                     Collections.sort(sBgWorkspaceScreens);
-                    // Log to disk
-                    Launcher.addDumpLog(TAG, "11683562 -   maxScreenId: " + maxScreenId, true);
-                    Launcher.addDumpLog(TAG, "11683562 -   sBgWorkspaceScreens: " +
-                            TextUtils.join(", ", sBgWorkspaceScreens), true);
 
                     LauncherAppState.getLauncherProvider().updateMaxScreenId(maxScreenId);
                     updateWorkspaceScreenOrder(context, sBgWorkspaceScreens);
@@ -2077,9 +1949,6 @@ public class LauncherModel extends BroadcastReceiver {
                     for (Integer i : orderedScreens.keySet()) {
                         sBgWorkspaceScreens.add(orderedScreens.get(i));
                     }
-                    // Log to disk
-                    Launcher.addDumpLog(TAG, "11683562 -   sBgWorkspaceScreens: " +
-                            TextUtils.join(", ", sBgWorkspaceScreens), true);
 
                     // Remove any empty screens
                     ArrayList<Long> unusedScreens = new ArrayList<Long>(sBgWorkspaceScreens);
@@ -2093,10 +1962,6 @@ public class LauncherModel extends BroadcastReceiver {
 
                     // If there are any empty screens remove them, and update.
                     if (unusedScreens.size() != 0) {
-                        // Log to disk
-                        Launcher.addDumpLog(TAG, "11683562 -   unusedScreens (to be removed): " +
-                                TextUtils.join(", ", unusedScreens), true);
-
                         sBgWorkspaceScreens.removeAll(unusedScreens);
                         updateWorkspaceScreenOrder(context, sBgWorkspaceScreens);
                     }
@@ -2128,7 +1993,7 @@ public class LauncherModel extends BroadcastReceiver {
 
         /** Filters the set of items who are directly or indirectly (via another container) on the
          * specified screen. */
-        private void filterCurrentWorkspaceItems(long currentScreenId,
+        private void filterCurrentWorkspaceItems(int currentScreen,
                 ArrayList<ItemInfo> allWorkspaceItems,
                 ArrayList<ItemInfo> currentScreenItems,
                 ArrayList<ItemInfo> otherScreenItems) {
@@ -2139,6 +2004,12 @@ public class LauncherModel extends BroadcastReceiver {
                 if (i == null) {
                     iter.remove();
                 }
+            }
+
+            // If we aren't filtering on a screen, then the set of items to load is the full set of
+            // items given.
+            if (currentScreen < 0) {
+                currentScreenItems.addAll(allWorkspaceItems);
             }
 
             // Order the set of items by their containers first, this allows use to walk through the
@@ -2153,7 +2024,7 @@ public class LauncherModel extends BroadcastReceiver {
             });
             for (ItemInfo info : allWorkspaceItems) {
                 if (info.container == LauncherSettings.Favorites.CONTAINER_DESKTOP) {
-                    if (info.screenId == currentScreenId) {
+                    if (info.screenId == currentScreen) {
                         currentScreenItems.add(info);
                         itemsOnScreen.add(info.id);
                     } else {
@@ -2174,15 +2045,20 @@ public class LauncherModel extends BroadcastReceiver {
         }
 
         /** Filters the set of widgets which are on the specified screen. */
-        private void filterCurrentAppWidgets(long currentScreenId,
+        private void filterCurrentAppWidgets(int currentScreen,
                 ArrayList<LauncherAppWidgetInfo> appWidgets,
                 ArrayList<LauncherAppWidgetInfo> currentScreenWidgets,
                 ArrayList<LauncherAppWidgetInfo> otherScreenWidgets) {
+            // If we aren't filtering on a screen, then the set of items to load is the full set of
+            // widgets given.
+            if (currentScreen < 0) {
+                currentScreenWidgets.addAll(appWidgets);
+            }
 
             for (LauncherAppWidgetInfo widget : appWidgets) {
                 if (widget == null) continue;
                 if (widget.container == LauncherSettings.Favorites.CONTAINER_DESKTOP &&
-                        widget.screenId == currentScreenId) {
+                        widget.screenId == currentScreen) {
                     currentScreenWidgets.add(widget);
                 } else {
                     otherScreenWidgets.add(widget);
@@ -2191,18 +2067,23 @@ public class LauncherModel extends BroadcastReceiver {
         }
 
         /** Filters the set of folders which are on the specified screen. */
-        private void filterCurrentFolders(long currentScreenId,
+        private void filterCurrentFolders(int currentScreen,
                 HashMap<Long, ItemInfo> itemsIdMap,
                 HashMap<Long, FolderInfo> folders,
                 HashMap<Long, FolderInfo> currentScreenFolders,
                 HashMap<Long, FolderInfo> otherScreenFolders) {
+            // If we aren't filtering on a screen, then the set of items to load is the full set of
+            // widgets given.
+            if (currentScreen < 0) {
+                currentScreenFolders.putAll(folders);
+            }
 
             for (long id : folders.keySet()) {
                 ItemInfo info = itemsIdMap.get(id);
                 FolderInfo folder = folders.get(id);
                 if (info == null || folder == null) continue;
                 if (info.container == LauncherSettings.Favorites.CONTAINER_DESKTOP &&
-                        info.screenId == currentScreenId) {
+                        info.screenId == currentScreen) {
                     currentScreenFolders.put(id, folder);
                 } else {
                     otherScreenFolders.put(id, folder);
@@ -2329,7 +2210,13 @@ public class LauncherModel extends BroadcastReceiver {
                 return;
             }
 
-            // Save a copy of all the bg-thread collections
+            final boolean isLoadingSynchronously = (synchronizeBindPage > -1);
+            final int currentScreen = isLoadingSynchronously ? synchronizeBindPage :
+                oldCallbacks.getCurrentWorkspaceScreen();
+
+            // Load all the items that are on the current page first (and in the process, unbind
+            // all the existing workspace items before we call startBinding() below.
+            unbindWorkspaceItemsOnMainThread();
             ArrayList<ItemInfo> workspaceItems = new ArrayList<ItemInfo>();
             ArrayList<LauncherAppWidgetInfo> appWidgets =
                     new ArrayList<LauncherAppWidgetInfo>();
@@ -2344,23 +2231,6 @@ public class LauncherModel extends BroadcastReceiver {
                 orderedScreenIds.addAll(sBgWorkspaceScreens);
             }
 
-            final boolean isLoadingSynchronously =
-                    synchronizeBindPage != PagedView.INVALID_RESTORE_PAGE;
-            int currScreen = isLoadingSynchronously ? synchronizeBindPage :
-                oldCallbacks.getCurrentWorkspaceScreen();
-            if (currScreen >= orderedScreenIds.size()) {
-                // There may be no workspace screens (just hotseat items and an empty page).
-                currScreen = PagedView.INVALID_RESTORE_PAGE;
-            }
-            final int currentScreen = currScreen;
-            final long currentScreenId = currentScreen < 0
-                    ? INVALID_SCREEN_ID : orderedScreenIds.get(currentScreen);
-
-            // Load all the items that are on the current page first (and in the process, unbind
-            // all the existing workspace items before we call startBinding() below.
-            unbindWorkspaceItemsOnMainThread();
-
-            // Separate the items that are on the current screen, and all the other remaining items
             ArrayList<ItemInfo> currentWorkspaceItems = new ArrayList<ItemInfo>();
             ArrayList<ItemInfo> otherWorkspaceItems = new ArrayList<ItemInfo>();
             ArrayList<LauncherAppWidgetInfo> currentAppWidgets =
@@ -2370,11 +2240,12 @@ public class LauncherModel extends BroadcastReceiver {
             HashMap<Long, FolderInfo> currentFolders = new HashMap<Long, FolderInfo>();
             HashMap<Long, FolderInfo> otherFolders = new HashMap<Long, FolderInfo>();
 
-            filterCurrentWorkspaceItems(currentScreenId, workspaceItems, currentWorkspaceItems,
+            // Separate the items that are on the current screen, and all the other remaining items
+            filterCurrentWorkspaceItems(currentScreen, workspaceItems, currentWorkspaceItems,
                     otherWorkspaceItems);
-            filterCurrentAppWidgets(currentScreenId, appWidgets, currentAppWidgets,
+            filterCurrentAppWidgets(currentScreen, appWidgets, currentAppWidgets,
                     otherAppWidgets);
-            filterCurrentFolders(currentScreenId, itemsIdMap, folders, currentFolders,
+            filterCurrentFolders(currentScreen, itemsIdMap, folders, currentFolders,
                     otherFolders);
             sortWorkspaceItemsSpatially(currentWorkspaceItems);
             sortWorkspaceItemsSpatially(otherWorkspaceItems);
@@ -2399,7 +2270,7 @@ public class LauncherModel extends BroadcastReceiver {
                 r = new Runnable() {
                     public void run() {
                         Callbacks callbacks = tryGetCallbacks(oldCallbacks);
-                        if (callbacks != null && currentScreen != PagedView.INVALID_RESTORE_PAGE) {
+                        if (callbacks != null) {
                             callbacks.onPageBoundSynchronously(currentScreen);
                         }
                     }
@@ -2648,7 +2519,7 @@ public class LauncherModel extends BroadcastReceiver {
             if (added != null) {
                 // Ensure that we add all the workspace applications to the db
                 Callbacks cb = mCallbacks != null ? mCallbacks.get() : null;
-                if (!LauncherAppState.isDisableAllApps()) {
+                if (!AppsCustomizePagedView.DISABLE_ALL_APPS) {
                     addAndBindAddedApps(context, new ArrayList<ItemInfo>(), cb, added);
                 } else {
                     final ArrayList<ItemInfo> addedInfos = new ArrayList<ItemInfo>(added);
@@ -2680,47 +2551,43 @@ public class LauncherModel extends BroadcastReceiver {
                     }
                 });
             }
+            // If a package has been removed, or an app has been removed as a result of
+            // an update (for example), make the removed callback.
+            if (mOp == OP_REMOVE || !removedApps.isEmpty()) {
+                final boolean packageRemoved = (mOp == OP_REMOVE);
+                final ArrayList<String> removedPackageNames =
+                        new ArrayList<String>(Arrays.asList(packages));
 
-            final ArrayList<String> removedPackageNames =
-                    new ArrayList<String>();
-            if (mOp == OP_REMOVE) {
-                // Mark all packages in the broadcast to be removed
-                removedPackageNames.addAll(Arrays.asList(packages));
-            } else if (mOp == OP_UPDATE) {
-                // Mark disabled packages in the broadcast to be removed
-                final PackageManager pm = context.getPackageManager();
-                for (int i=0; i<N; i++) {
-                    if (isPackageDisabled(pm, packages[i])) {
-                        removedPackageNames.add(packages[i]);
+                // Update the launcher db to reflect the removal of apps
+                if (packageRemoved) {
+                    for (String pn : removedPackageNames) {
+                        ArrayList<ItemInfo> infos = getItemInfoForPackageName(pn);
+                        for (ItemInfo i : infos) {
+                            deleteItemFromDatabase(context, i);
+                        }
+                    }
+
+                    // Remove any queued items from the install queue
+                    String spKey = LauncherAppState.getSharedPreferencesKey();
+                    SharedPreferences sp =
+                            context.getSharedPreferences(spKey, Context.MODE_PRIVATE);
+                    InstallShortcutReceiver.removeFromInstallQueue(sp, removedPackageNames);
+                } else {
+                    for (AppInfo a : removedApps) {
+                        ArrayList<ItemInfo> infos =
+                                getItemInfoForComponentName(a.componentName);
+                        for (ItemInfo i : infos) {
+                            deleteItemFromDatabase(context, i);
+                        }
                     }
                 }
-            }
-            // Remove all the components associated with this package
-            for (String pn : removedPackageNames) {
-                ArrayList<ItemInfo> infos = getItemInfoForPackageName(pn);
-                for (ItemInfo i : infos) {
-                    deleteItemFromDatabase(context, i);
-                }
-            }
-            // Remove all the specific components
-            for (AppInfo a : removedApps) {
-                ArrayList<ItemInfo> infos = getItemInfoForComponentName(a.componentName);
-                for (ItemInfo i : infos) {
-                    deleteItemFromDatabase(context, i);
-                }
-            }
-            if (!removedPackageNames.isEmpty() || !removedApps.isEmpty()) {
-                // Remove any queued items from the install queue
-                String spKey = LauncherAppState.getSharedPreferencesKey();
-                SharedPreferences sp =
-                        context.getSharedPreferences(spKey, Context.MODE_PRIVATE);
-                InstallShortcutReceiver.removeFromInstallQueue(sp, removedPackageNames);
-                // Call the components-removed callback
+
                 mHandler.post(new Runnable() {
                     public void run() {
                         Callbacks cb = mCallbacks != null ? mCallbacks.get() : null;
                         if (callbacks == cb && cb != null) {
-                            callbacks.bindComponentsRemoved(removedPackageNames, removedApps);
+                            callbacks.bindComponentsRemoved(removedPackageNames,
+                                    removedApps, packageRemoved);
                         }
                     }
                 });
@@ -2762,65 +2629,23 @@ public class LauncherModel extends BroadcastReceiver {
         return widgetsAndShortcuts;
     }
 
-    private static boolean isPackageDisabled(PackageManager pm, String packageName) {
-        try {
-            PackageInfo pi = pm.getPackageInfo(packageName, 0);
-            return !pi.applicationInfo.enabled;
-        } catch (NameNotFoundException e) {
-            // Fall through
-        }
-        return false;
-    }
-
-    public static boolean isValidPackageComponent(PackageManager pm, ComponentName cn) {
+    private boolean isValidPackageComponent(PackageManager pm, ComponentName cn) {
         if (cn == null) {
             return false;
         }
-        if (isPackageDisabled(pm, cn.getPackageName())) {
-            return false;
-        }
 
         try {
-            // Check the activity
+            // Skip if the application is disabled
             PackageInfo pi = pm.getPackageInfo(cn.getPackageName(), 0);
+            if (!pi.applicationInfo.enabled) {
+                return false;
+            }
+
+            // Check the activity
             return (pm.getActivityInfo(cn, 0) != null);
         } catch (NameNotFoundException e) {
             return false;
         }
-    }
-
-    /**
-     * Make an ShortcutInfo object for a restored application or shortcut item that points
-     * to a package that is not yet installed on the system.
-     */
-    public ShortcutInfo getRestoredItemInfo(Cursor cursor, int titleIndex) {
-        final ShortcutInfo info = new ShortcutInfo();
-        info.usingFallbackIcon = true;
-        info.setIcon(getFallbackIcon());
-        if (cursor != null) {
-            info.title =  cursor.getString(titleIndex);
-        } else {
-            info.title = "";
-        }
-        info.itemType = LauncherSettings.Favorites.ITEM_TYPE_SHORTCUT;
-        return info;
-    }
-
-    /**
-     * Make an Intent object for a restored application or shortcut item that points
-     * to the market page for the item.
-     */
-    private Intent getRestoredItemIntent(Cursor c, Context context, Intent intent) {
-        ComponentName componentName = intent.getComponent();
-        Intent marketIntent = new Intent(Intent.ACTION_VIEW);
-        Uri marketUri = new Uri.Builder()
-                .scheme("market")
-                .authority("details")
-                .appendQueryParameter("id", componentName.getPackageName())
-                .build();
-        Log.d(TAG, "manufactured intent uri: " + marketUri.toString());
-        marketIntent.setData(marketUri);
-        return marketIntent;
     }
 
     /**

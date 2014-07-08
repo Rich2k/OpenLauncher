@@ -78,3 +78,7 @@ public class Alarm implements Runnable{
         return mAlarmPending;
     }
 }
+
+interface OnAlarmListener {
+    public void onAlarm(Alarm alarm);
+}

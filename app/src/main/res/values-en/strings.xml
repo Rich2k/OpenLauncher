@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="ddg_hint">Search DuckDuckGo…</string>
+    <string name="search_engine_pref_sum">Choose the search engine</string>
+    <string name="search_engine_pref_title">Search Engine</string>
 </resources>

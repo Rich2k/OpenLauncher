@@ -30,6 +30,8 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.android.launcher3.R;
+
 /**
  * The linear layout used strictly for the widget/wallpaper tab of the customization tray
  */
@@ -82,11 +84,11 @@ public class PagedViewWidget extends LinearLayout {
         DeviceProfile grid = app.getDynamicGrid().getDeviceProfile();
         TextView name = (TextView) findViewById(R.id.widget_name);
         if (name != null) {
-            name.setTextSize(TypedValue.COMPLEX_UNIT_PX, grid.iconTextSizePx);
+            name.setTextSize(TypedValue.COMPLEX_UNIT_SP, grid.iconTextSize);
         }
         TextView dims = (TextView) findViewById(R.id.widget_dims);
         if (dims != null) {
-            dims.setTextSize(TypedValue.COMPLEX_UNIT_PX, grid.iconTextSizePx);
+            dims.setTextSize(TypedValue.COMPLEX_UNIT_SP, grid.iconTextSize);
         }
     }
 

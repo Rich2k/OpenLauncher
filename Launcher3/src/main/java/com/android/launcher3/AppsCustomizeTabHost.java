@@ -367,10 +367,6 @@ public class AppsCustomizeTabHost extends TabHost implements LauncherTransitiona
 
     @Override
     public View getContent() {
-        View appsCustomizeContent = mAppsCustomizePane.getContent();
-        if (appsCustomizeContent != null) {
-            return appsCustomizeContent;
-        }
         return mContent;
     }
 
@@ -401,18 +397,17 @@ public class AppsCustomizeTabHost extends TabHost implements LauncherTransitiona
 
     @Override
     public void onLauncherTransitionStart(Launcher l, boolean animated, boolean toWorkspace) {
-        mAppsCustomizePane.onLauncherTransitionStart(l, animated, toWorkspace);
         if (animated) {
             enableAndBuildHardwareLayer();
         }
 
         // Dismiss the workspace cling
-        l.getLauncherClings().dismissWorkspaceCling(null);
+        l.dismissWorkspaceCling(null);
     }
 
     @Override
     public void onLauncherTransitionStep(Launcher l, float t) {
-        mAppsCustomizePane.onLauncherTransitionStep(l, t);
+        // Do nothing
     }
 
     @Override

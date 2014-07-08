@@ -95,7 +95,7 @@ public class Hotseat extends FrameLayout {
         return hasVerticalHotseat() ? (mContent.getCountY() - (rank + 1)) : 0;
     }
     public boolean isAllAppsButtonRank(int rank) {
-        if (LauncherAppState.isDisableAllApps()) {
+        if (AppsCustomizePagedView.DISABLE_ALL_APPS) {
             return false;
         } else {
             return rank == mAllAppsButtonRank;
@@ -142,7 +142,7 @@ public class Hotseat extends FrameLayout {
     void resetLayout() {
         mContent.removeAllViewsInLayout();
 
-        if (!LauncherAppState.isDisableAllApps()) {
+        if (!AppsCustomizePagedView.DISABLE_ALL_APPS) {
             // Add the Apps button
             Context context = getContext();
 
@@ -189,7 +189,7 @@ public class Hotseat extends FrameLayout {
     void addAllAppsFolder(IconCache iconCache,
             ArrayList<AppInfo> allApps, ArrayList<ComponentName> onWorkspace,
             Launcher launcher, Workspace workspace) {
-        if (LauncherAppState.isDisableAllApps()) {
+        if (AppsCustomizePagedView.DISABLE_ALL_APPS) {
             FolderInfo fi = new FolderInfo();
 
             fi.cellX = getCellXFromOrder(mAllAppsButtonRank);
@@ -219,7 +219,7 @@ public class Hotseat extends FrameLayout {
     }
 
     void addAppsToAllAppsFolder(ArrayList<AppInfo> apps) {
-        if (LauncherAppState.isDisableAllApps()) {
+        if (AppsCustomizePagedView.DISABLE_ALL_APPS) {
             View v = mContent.getChildAt(getCellXFromOrder(mAllAppsButtonRank), getCellYFromOrder(mAllAppsButtonRank));
             FolderIcon fi = null;
 

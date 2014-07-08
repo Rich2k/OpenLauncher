@@ -54,8 +54,7 @@ public interface BackupProtos {
     }
     
     @Override
-    public void 
-writeTo(com.google.protobuf.nano.CodedOutputByteBufferNano output)
+    public void writeTo(com.google.protobuf.nano.CodedOutputByteBufferNano output)
         throws java.io.IOException {
       output.writeInt32(1, this.type);
       if (!this.name.equals("")) {
@@ -100,9 +99,7 @@ writeTo(com.google.protobuf.nano.CodedOutputByteBufferNano output)
           case 0:
             return this;
           default: {
-            if 
-(!com.google.protobuf.nano.WireFormatNano.parseUnknownField(input, tag)) 
-{
+            if (!com.google.protobuf.nano.WireFormatNano.parseUnknownField(input, tag)) {
               return this;
             }
             break;
@@ -128,10 +125,8 @@ writeTo(com.google.protobuf.nano.CodedOutputByteBufferNano output)
     }
     
     public static Key parseFrom(byte[] data)
-        throws 
-com.google.protobuf.nano.InvalidProtocolBufferNanoException {
-      return com.google.protobuf.nano.MessageNano.mergeFrom(new Key(), 
-data);
+        throws com.google.protobuf.nano.InvalidProtocolBufferNanoException {
+      return com.google.protobuf.nano.MessageNano.mergeFrom(new Key(), data);
     }
     
     public static Key parseFrom(
@@ -176,8 +171,7 @@ data);
     }
     
     @Override
-    public void 
-writeTo(com.google.protobuf.nano.CodedOutputByteBufferNano output)
+    public void writeTo(com.google.protobuf.nano.CodedOutputByteBufferNano output)
         throws java.io.IOException {
       output.writeBytes(1, this.payload);
       output.writeInt64(2, this.checksum);
@@ -204,9 +198,7 @@ writeTo(com.google.protobuf.nano.CodedOutputByteBufferNano output)
           case 0:
             return this;
           default: {
-            if 
-(!com.google.protobuf.nano.WireFormatNano.parseUnknownField(input, tag)) 
-{
+            if (!com.google.protobuf.nano.WireFormatNano.parseUnknownField(input, tag)) {
               return this;
             }
             break;
@@ -224,10 +216,8 @@ writeTo(com.google.protobuf.nano.CodedOutputByteBufferNano output)
     }
     
     public static CheckedMessage parseFrom(byte[] data)
-        throws 
-com.google.protobuf.nano.InvalidProtocolBufferNanoException {
-      return com.google.protobuf.nano.MessageNano.mergeFrom(new 
-CheckedMessage(), data);
+        throws com.google.protobuf.nano.InvalidProtocolBufferNanoException {
+      return com.google.protobuf.nano.MessageNano.mergeFrom(new CheckedMessage(), data);
     }
     
     public static CheckedMessage parseFrom(
@@ -284,8 +274,7 @@ CheckedMessage(), data);
     }
     
     @Override
-    public void 
-writeTo(com.google.protobuf.nano.CodedOutputByteBufferNano output)
+    public void writeTo(com.google.protobuf.nano.CodedOutputByteBufferNano output)
         throws java.io.IOException {
       output.writeInt32(1, this.appVersion);
       output.writeInt64(2, this.t);
@@ -297,8 +286,7 @@ writeTo(com.google.protobuf.nano.CodedOutputByteBufferNano output)
       }
       if (this.key != null && this.key.length > 0) {
         for (int i = 0; i < this.key.length; i++) {
-          com.android.launcher3.backup.BackupProtos.Key element = 
-this.key[i];
+          com.android.launcher3.backup.BackupProtos.Key element = this.key[i];
           if (element != null) {
             output.writeMessage(5, element);
           }
@@ -323,8 +311,7 @@ this.key[i];
       }
       if (this.key != null && this.key.length > 0) {
         for (int i = 0; i < this.key.length; i++) {
-          com.android.launcher3.backup.BackupProtos.Key element = 
-this.key[i];
+          com.android.launcher3.backup.BackupProtos.Key element = this.key[i];
           if (element != null) {
             size += com.google.protobuf.nano.CodedOutputByteBufferNano
               .computeMessageSize(5, element);
@@ -345,9 +332,7 @@ this.key[i];
           case 0:
             return this;
           default: {
-            if 
-(!com.google.protobuf.nano.WireFormatNano.parseUnknownField(input, tag)) 
-{
+            if (!com.google.protobuf.nano.WireFormatNano.parseUnknownField(input, tag)) {
               return this;
             }
             break;
@@ -373,20 +358,17 @@ this.key[i];
                 .getRepeatedFieldArrayLength(input, 42);
             int i = this.key == null ? 0 : this.key.length;
             com.android.launcher3.backup.BackupProtos.Key[] newArray =
-                new com.android.launcher3.backup.BackupProtos.Key[i + 
-arrayLength];
+                new com.android.launcher3.backup.BackupProtos.Key[i + arrayLength];
             if (i != 0) {
               java.lang.System.arraycopy(this.key, 0, newArray, 0, i);
             }
             for (; i < newArray.length - 1; i++) {
-              newArray[i] = new 
-com.android.launcher3.backup.BackupProtos.Key();
+              newArray[i] = new com.android.launcher3.backup.BackupProtos.Key();
               input.readMessage(newArray[i]);
               input.readTag();
             }
             // Last one without readTag.
-            newArray[i] = new 
-com.android.launcher3.backup.BackupProtos.Key();
+            newArray[i] = new com.android.launcher3.backup.BackupProtos.Key();
             input.readMessage(newArray[i]);
             this.key = newArray;
             break;
@@ -396,10 +378,8 @@ com.android.launcher3.backup.BackupProtos.Key();
     }
     
     public static Journal parseFrom(byte[] data)
-        throws 
-com.google.protobuf.nano.InvalidProtocolBufferNanoException {
-      return com.google.protobuf.nano.MessageNano.mergeFrom(new 
-Journal(), data);
+        throws com.google.protobuf.nano.InvalidProtocolBufferNanoException {
+      return com.google.protobuf.nano.MessageNano.mergeFrom(new Journal(), data);
     }
     
     public static Journal parseFrom(
@@ -508,8 +488,7 @@ Journal(), data);
     }
     
     @Override
-    public void 
-writeTo(com.google.protobuf.nano.CodedOutputByteBufferNano output)
+    public void writeTo(com.google.protobuf.nano.CodedOutputByteBufferNano output)
         throws java.io.IOException {
       output.writeInt64(1, this.id);
       output.writeInt32(2, this.itemType);
@@ -558,8 +537,7 @@ writeTo(com.google.protobuf.nano.CodedOutputByteBufferNano output)
       if (!this.iconResource.equals("")) {
         output.writeString(17, this.iconResource);
       }
-      if (!java.util.Arrays.equals(this.icon, 
-com.google.protobuf.nano.WireFormatNano.EMPTY_BYTES)) {
+      if (!java.util.Arrays.equals(this.icon, com.google.protobuf.nano.WireFormatNano.EMPTY_BYTES)) {
         output.writeBytes(18, this.icon);
       }
     }
@@ -631,8 +609,7 @@ com.google.protobuf.nano.WireFormatNano.EMPTY_BYTES)) {
         size += com.google.protobuf.nano.CodedOutputByteBufferNano
             .computeStringSize(17, this.iconResource);
       }
-      if (!java.util.Arrays.equals(this.icon, 
-com.google.protobuf.nano.WireFormatNano.EMPTY_BYTES)) {
+      if (!java.util.Arrays.equals(this.icon, com.google.protobuf.nano.WireFormatNano.EMPTY_BYTES)) {
         size += com.google.protobuf.nano.CodedOutputByteBufferNano
             .computeBytesSize(18, this.icon);
       }
@@ -650,9 +627,7 @@ com.google.protobuf.nano.WireFormatNano.EMPTY_BYTES)) {
           case 0:
             return this;
           default: {
-            if 
-(!com.google.protobuf.nano.WireFormatNano.parseUnknownField(input, tag)) 
-{
+            if (!com.google.protobuf.nano.WireFormatNano.parseUnknownField(input, tag)) {
               return this;
             }
             break;
@@ -734,10 +709,8 @@ com.google.protobuf.nano.WireFormatNano.EMPTY_BYTES)) {
     }
     
     public static Favorite parseFrom(byte[] data)
-        throws 
-com.google.protobuf.nano.InvalidProtocolBufferNanoException {
-      return com.google.protobuf.nano.MessageNano.mergeFrom(new 
-Favorite(), data);
+        throws com.google.protobuf.nano.InvalidProtocolBufferNanoException {
+      return com.google.protobuf.nano.MessageNano.mergeFrom(new Favorite(), data);
     }
     
     public static Favorite parseFrom(
@@ -782,8 +755,7 @@ Favorite(), data);
     }
     
     @Override
-    public void 
-writeTo(com.google.protobuf.nano.CodedOutputByteBufferNano output)
+    public void writeTo(com.google.protobuf.nano.CodedOutputByteBufferNano output)
         throws java.io.IOException {
       output.writeInt64(1, this.id);
       if (this.rank != 0) {
@@ -814,9 +786,7 @@ writeTo(com.google.protobuf.nano.CodedOutputByteBufferNano output)
           case 0:
             return this;
           default: {
-            if 
-(!com.google.protobuf.nano.WireFormatNano.parseUnknownField(input, tag)) 
-{
+            if (!com.google.protobuf.nano.WireFormatNano.parseUnknownField(input, tag)) {
               return this;
             }
             break;
@@ -834,10 +804,8 @@ writeTo(com.google.protobuf.nano.CodedOutputByteBufferNano output)
     }
     
     public static Screen parseFrom(byte[] data)
-        throws 
-com.google.protobuf.nano.InvalidProtocolBufferNanoException {
-      return com.google.protobuf.nano.MessageNano.mergeFrom(new 
-Screen(), data);
+        throws com.google.protobuf.nano.InvalidProtocolBufferNanoException {
+      return com.google.protobuf.nano.MessageNano.mergeFrom(new Screen(), data);
     }
     
     public static Screen parseFrom(
@@ -882,8 +850,7 @@ Screen(), data);
     }
     
     @Override
-    public void 
-writeTo(com.google.protobuf.nano.CodedOutputByteBufferNano output)
+    public void writeTo(com.google.protobuf.nano.CodedOutputByteBufferNano output)
         throws java.io.IOException {
       output.writeInt32(1, this.dpi);
       output.writeBytes(2, this.data);
@@ -910,9 +877,7 @@ writeTo(com.google.protobuf.nano.CodedOutputByteBufferNano output)
           case 0:
             return this;
           default: {
-            if 
-(!com.google.protobuf.nano.WireFormatNano.parseUnknownField(input, tag)) 
-{
+            if (!com.google.protobuf.nano.WireFormatNano.parseUnknownField(input, tag)) {
               return this;
             }
             break;
@@ -930,10 +895,8 @@ writeTo(com.google.protobuf.nano.CodedOutputByteBufferNano output)
     }
     
     public static Resource parseFrom(byte[] data)
-        throws 
-com.google.protobuf.nano.InvalidProtocolBufferNanoException {
-      return com.google.protobuf.nano.MessageNano.mergeFrom(new 
-Resource(), data);
+        throws com.google.protobuf.nano.InvalidProtocolBufferNanoException {
+      return com.google.protobuf.nano.MessageNano.mergeFrom(new Resource(), data);
     }
     
     public static Resource parseFrom(
@@ -990,8 +953,7 @@ Resource(), data);
     }
     
     @Override
-    public void 
-writeTo(com.google.protobuf.nano.CodedOutputByteBufferNano output)
+    public void writeTo(com.google.protobuf.nano.CodedOutputByteBufferNano output)
         throws java.io.IOException {
       output.writeString(1, this.provider);
       if (!this.label.equals("")) {
@@ -1043,9 +1005,7 @@ writeTo(com.google.protobuf.nano.CodedOutputByteBufferNano output)
           case 0:
             return this;
           default: {
-            if 
-(!com.google.protobuf.nano.WireFormatNano.parseUnknownField(input, tag)) 
-{
+            if (!com.google.protobuf.nano.WireFormatNano.parseUnknownField(input, tag)) {
               return this;
             }
             break;
@@ -1064,16 +1024,14 @@ writeTo(com.google.protobuf.nano.CodedOutputByteBufferNano output)
           }
           case 34: {
             if (this.icon == null) {
-              this.icon = new 
-com.android.launcher3.backup.BackupProtos.Resource();
+              this.icon = new com.android.launcher3.backup.BackupProtos.Resource();
             }
             input.readMessage(this.icon);
             break;
           }
           case 42: {
             if (this.preview == null) {
-              this.preview = new 
-com.android.launcher3.backup.BackupProtos.Resource();
+              this.preview = new com.android.launcher3.backup.BackupProtos.Resource();
             }
             input.readMessage(this.preview);
             break;
@@ -1083,10 +1041,8 @@ com.android.launcher3.backup.BackupProtos.Resource();
     }
     
     public static Widget parseFrom(byte[] data)
-        throws 
-com.google.protobuf.nano.InvalidProtocolBufferNanoException {
-      return com.google.protobuf.nano.MessageNano.mergeFrom(new 
-Widget(), data);
+        throws com.google.protobuf.nano.InvalidProtocolBufferNanoException {
+      return com.google.protobuf.nano.MessageNano.mergeFrom(new Widget(), data);
     }
     
     public static Widget parseFrom(

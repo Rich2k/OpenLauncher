@@ -20,6 +20,7 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.Region;
 import android.graphics.Region.Op;
@@ -86,7 +87,7 @@ public class BubbleTextView extends TextView {
         // Ensure we are using the right text size
         LauncherAppState app = LauncherAppState.getInstance();
         DeviceProfile grid = app.getDynamicGrid().getDeviceProfile();
-        setTextSize(TypedValue.COMPLEX_UNIT_PX, grid.iconTextSizePx);
+        setTextSize(TypedValue.COMPLEX_UNIT_SP, grid.iconTextSize);
         setTextColor(getResources().getColor(R.color.workspace_icon_text_color));
     }
 
@@ -110,7 +111,7 @@ public class BubbleTextView extends TextView {
 
         setCompoundDrawables(null,
                 Utilities.createIconDrawable(b), null, null);
-        setCompoundDrawablePadding(grid.iconDrawablePaddingPx);
+        setCompoundDrawablePadding((int) ((grid.folderIconSizePx - grid.iconSizePx) / 2f));
         setText(info.title);
         setTag(info);
     }
@@ -200,10 +201,6 @@ public class BubbleTextView extends TextView {
         destCanvas.clipRect(clipRect, Op.REPLACE);
         draw(destCanvas);
         destCanvas.restore();
-    }
-
-    public void setGlowColor(int color) {
-        mFocusedOutlineColor = mFocusedGlowColor = mPressedOutlineColor = mPressedGlowColor = color;
     }
 
     /**

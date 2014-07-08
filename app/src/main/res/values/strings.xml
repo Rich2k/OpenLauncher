@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <array name="engines">
+        <item>DuckDuckGo</item>
+        <item>Google</item>
+        <item>Bing</item>
+        <item>Yahoo!</item>
+    </array>
+    <string name="search_engine_pref_sum">Choose the search engine</string>
+    <string name="search_engine_pref_title">Search Engine</string>
+    <string name="search_engine_pref_cat">Search</string>
+</resources>
